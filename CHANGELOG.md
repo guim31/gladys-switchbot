@@ -10,6 +10,8 @@ the notes of the version's GitHub Release.
 
 ## [Unreleased]
 
+## [1.0.1] - 2026-10-13
+
 ### Added
 
 - SwitchBot devices in Gladys through the official SwitchBot cloud API (v1.1),
@@ -36,4 +38,5 @@ the notes of the version's GitHub Release.
 - Texts in English, French, German and Spanish, and the documentation in the
   four languages.
 
-[Unreleased]: https://github.com/guim31/gladys-switchbot/commits/main
+[Unreleased]: https://github.com/guim31/gladys-switchbot/compare/v1.0.1...HEAD
+[1.0.1]: https://github.com/guim31/gladys-switchbot/releases/tag/v1.0.1
