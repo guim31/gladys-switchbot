@@ -1,110 +1,116 @@
 // -----------------------------------------------------------------------------
-// Device type: DIMMABLE LIGHT
-// Illustrates a device with SEVERAL controllable features: on/off + brightness.
-// A single onSetValue callback handles the whole device and routes per feature.
+// Lights: Color Bulb, Strip Light, Strip Light 3, Floor Lamp, RGBICWW strip
+// and floor lamp, RGBIC neon rope lights, Ceiling Light and Ceiling Light Pro.
+//
+// Three families by what the API documents: colour + white temperature
+// (`setColor` and `setColorTemperature`), colour only, white temperature
+// only (the ceiling lights). Status: `power` "on"/"off", `brightness` 1-100,
+// `color` "r:g:b", `colorTemperature` in kelvins (2700-6500), published to
+// Gladys in mireds (see features.js).
 // -----------------------------------------------------------------------------
 
 import {
-  createLogger,
-  DEVICE_FEATURE_CATEGORIES,
-  DEVICE_FEATURE_TYPES,
-  DEVICE_FEATURE_UNITS,
-} from '@gladysassistant/integration-sdk';
+  C,
+  MIRED_MAX,
+  MIRED_MIN,
+  T,
+  clamp,
+  control,
+  intToRgb,
+  kelvinToMired,
+  miredToKelvin,
+  num,
+  onOff,
+  rgbToInt,
+} from './features.js';
 
-const DEVICE_TYPE = 'light';
+const COLOR_AND_WHITE = [
+  'Color Bulb',
+  'Strip Light 3',
+  'Floor Lamp',
+  'RGBICWW Strip Light',
+  'RGBICWW Floor Lamp',
+];
+const COLOR_ONLY = ['Strip Light', 'RGBIC Neon Rope Light', 'RGBIC Neon Wire Rope Light'];
+const WHITE_ONLY = ['Ceiling Light', 'Ceiling Light Pro'];
 
-const logger = createLogger({ name: DEVICE_TYPE });
-
-// Unique id coming from the external platform (simulated here).
-const PLATFORM_DEVICE_ID = 'bulb-4d9e01';
-
-const FEATURE = {
-  ON_OFF: 'on-off',
-  BRIGHTNESS: 'brightness',
-};
-
-// In-memory reflection of the real device state.
-let isOn = false;
-let brightness = 50;
+const hasColor = (device) => !WHITE_ONLY.includes(device.deviceType);
+const hasWhite = (device) => !COLOR_ONLY.includes(device.deviceType);
 
 export const light = {
-  key: DEVICE_TYPE,
+  kind: 'light',
+  types: [...COLOR_AND_WHITE, ...COLOR_ONLY, ...WHITE_ONLY],
+  webhook: true,
 
-  deviceExternalId(gladys) {
-    return gladys.externalIds(DEVICE_TYPE, PLATFORM_DEVICE_ID).device;
-  },
-
-  buildDevice(gladys) {
-    const ids = gladys.externalIds(DEVICE_TYPE, PLATFORM_DEVICE_ID);
-    return {
-      name: 'Living room light',
-      external_id: ids.device,
-      features: [
-        {
-          name: 'On/Off',
-          external_id: ids.feature(FEATURE.ON_OFF),
-          category: DEVICE_FEATURE_CATEGORIES.LIGHT,
-          type: DEVICE_FEATURE_TYPES.LIGHT.BINARY,
-          read_only: false,
-          has_feedback: true,
-          keep_history: true,
-        },
-        {
-          name: 'Brightness',
-          external_id: ids.feature(FEATURE.BRIGHTNESS),
-          category: DEVICE_FEATURE_CATEGORIES.LIGHT,
-          type: DEVICE_FEATURE_TYPES.LIGHT.BRIGHTNESS,
-          unit: DEVICE_FEATURE_UNITS.PERCENT,
-          min: 0,
-          max: 100,
-          read_only: false,
-          has_feedback: true,
-          keep_history: true,
-        },
-      ],
-    };
-  },
-
-  // Used by the `identify` manifest action (see the dynamic device select in
-  // gladys-assistant-integration.json): make THIS physical device signal
-  // itself so the user can spot it among identical hardware.
-  async identify() {
-    logger.info('Identify: blinking the bulb');
-    // ------------------------------------------------------------------ //
-    // DO THE WORK: make the bulb blink without changing its final state.
-    // e.g. await zigbee.set(ieeeAddr, { effect: 'blink' });
-    // ------------------------------------------------------------------ //
-  },
-
-  async onSetValue(gladys, { feature, value }) {
-    const ids = gladys.externalIds(DEVICE_TYPE, PLATFORM_DEVICE_ID);
-
-    if (feature.external_id === ids.feature(FEATURE.ON_OFF)) {
-      const on = value === 1;
-      logger.info(`Power: ${isOn ? 'ON' : 'OFF'} -> ${on ? 'ON' : 'OFF'}`);
-      // -------------------------------------------------------------- //
-      // DO THE WORK: turn the bulb on/off.
-      // e.g. await zigbee.set(ieeeAddr, { state: on ? 'ON' : 'OFF' });
-      // -------------------------------------------------------------- //
-      isOn = on;
-      await gladys.publishState(feature.external_id, on ? 1 : 0);
-      return;
+  features(device) {
+    const specs = [
+      control('power', 'light', C.LIGHT, T.LIGHT.BINARY, { max: 1 }),
+      control('brightness', 'brightness', C.LIGHT, T.LIGHT.BRIGHTNESS, { max: 100 }),
+    ];
+    if (hasColor(device)) {
+      specs.push(control('color', 'color', C.LIGHT, T.LIGHT.COLOR, { max: 0xffffff }));
     }
-
-    if (feature.external_id === ids.feature(FEATURE.BRIGHTNESS)) {
-      const level = Math.max(0, Math.min(100, value));
-      logger.info(`Brightness: ${brightness}% -> ${level}%`);
-      // -------------------------------------------------------------- //
-      // DO THE WORK: set the brightness (often needs converting to the
-      // hardware scale, e.g. 0-254 for Zigbee).
-      // e.g. await zigbee.set(ieeeAddr, { brightness: Math.round(level / 100 * 254) });
-      // -------------------------------------------------------------- //
-      brightness = level;
-      isOn = level > 0;
-      await gladys.publishState(feature.external_id, level);
-      return;
+    if (hasWhite(device)) {
+      specs.push(
+        control('color-temperature', 'colorTemperature', C.LIGHT, T.LIGHT.TEMPERATURE, {
+          min: MIRED_MIN,
+          max: MIRED_MAX,
+        }),
+      );
     }
+    return specs;
+  },
 
-    logger.warn(`Unknown feature: ${feature.external_id}`);
+  states: (status, device) => ({
+    power: onOff(status.power),
+    brightness: clamp(num(status.brightness, 0), 0, 100),
+    color: hasColor(device) ? rgbToInt(status.color) : undefined,
+    'color-temperature': hasWhite(device) ? kelvinToMired(status.colorTemperature) : undefined,
+  }),
+
+  command({ key, value, device }) {
+    const number = Number(value);
+    if (!Number.isFinite(number)) {
+      return null;
+    }
+    switch (key) {
+      case 'power': {
+        const on = number === 1;
+        return {
+          commands: [{ command: on ? 'turnOn' : 'turnOff' }],
+          expected: { power: on ? 1 : 0 },
+        };
+      }
+      case 'brightness': {
+        const brightness = Math.round(clamp(number, 0, 100));
+        if (brightness === 0) {
+          return { commands: [{ command: 'turnOff' }], expected: { power: 0 } };
+        }
+        return {
+          commands: [{ command: 'setBrightness', parameter: brightness }],
+          expected: { brightness },
+        };
+      }
+      case 'color':
+        if (!hasColor(device)) {
+          return null;
+        }
+        return {
+          commands: [{ command: 'setColor', parameter: intToRgb(number) }],
+          expected: { color: Math.round(clamp(number, 0, 0xffffff)) },
+        };
+      case 'color-temperature': {
+        if (!hasWhite(device)) {
+          return null;
+        }
+        const kelvin = miredToKelvin(number);
+        return {
+          commands: [{ command: 'setColorTemperature', parameter: kelvin }],
+          expected: { 'color-temperature': kelvinToMired(kelvin) },
+        };
+      }
+      default:
+        return null;
+    }
   },
 };

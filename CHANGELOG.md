@@ -12,44 +12,28 @@ the notes of the version's GitHub Release.
 
 ### Added
 
-- A working example of scene triggers, scene actions and dashboard widgets
-  (Gladys 5.1.0 or later).
-- `CHANGELOG.md`, rolled by the Release workflow.
-- A GitHub Release for every version, with its changelog section as notes: the
-  Gladys Supervision page links each version to the repository's releases.
-- CI runs the tests on Node 22 and 24, and builds the Docker image.
-- Dependabot keeps the npm dependencies and the GitHub Actions up to date.
-- `SECURITY.md` (how to report a vulnerability) and `CLAUDE.md` (project rules
-  for contributors and coding assistants).
-- Manifest tests: `version` matches `package.json`, `docker_image` is tagged
-  with it, descriptions hold 10 to 100 characters, placeholders are
-  multi-language objects.
-- The latitude and longitude fields show an example value as placeholder.
+- SwitchBot devices in Gladys through the official SwitchBot cloud API (v1.1),
+  with the token and the secret key of the SwitchBot app: Bot, Plug, Plug Mini
+  (US, JP, EU), Relay Switch 1 and 1PM, Curtain, Curtain 3, Roller Shade, Blind
+  Tilt, the Lock family (read only unless "Allow locking and unlocking" is on),
+  Meter, Meter Plus, Outdoor Meter, Meter Pro, Meter Pro CO2, Hub 2, Hub 3,
+  Contact, Motion and Water Leak sensors, Color Bulb, Strip Light, Strip Light 3,
+  Floor Lamp, RGBIC(WW) lights, Ceiling Light (Pro), Humidifier, Air Purifier,
+  circulator fans and robot vacuums (basic control).
+- The virtual infrared remotes of the hubs, as an option: a power button and the
+  last command sent.
+- A refresh pace sized on the number of devices, to stay within half of the
+  daily quota of 10,000 API calls; the calls of the day are counted (saved under
+  `/data`) and polling pauses near the quota, commands keep working.
+- Real time through Gladys Plus, as an option: the SwitchBot webhook triggers a
+  read of the device that changed.
+- Scene triggers: door or window opened, closed or left open; motion detected;
+  water leak; battery low.
+- Scene actions: press a Bot; send an IR command (standard or custom button).
+- The "SwitchBot" dashboard widget: temperatures, open doors and windows, locks,
+  water leaks, low batteries and the API calls of the day.
+- A "Test the connection" button in the configuration.
+- Texts in English, French, German and Spanish, and the documentation in the
+  four languages.
 
-### Changed
-
-- Node.js 22 or later is required (Node 20 is end-of-life).
-- Integration SDK 0.15.0. The tests now run against the fake Gladys of the
-  SDK, which refuses the payloads Gladys refuses.
-- The refresh interval is one minute minimum, the fastest Gladys polls a
-  device. The plug's power is only sent when it changes, and every 30
-  minutes otherwise.
-
-### Fixed
-
-- Gladys refused the devices of the Discovery tab: the weather station and
-  the plug declared their poll frequency in seconds instead of one of the
-  values Gladys accepts, and were never polled. They now poll every minute,
-  and the readings follow the refresh interval of the configuration.
-
-- The release commit no longer fails `npm run format:check`: the Release
-  workflow updates the manifest `version` and `docker_image` in place instead
-  of re-printing the whole file with `jq`.
-- The integration can write to `/data`: the image creates the directory owned
-  by the `node` user, a new Docker volume was owned by root.
-- A sub-container running the integration's own image follows it to the new
-  tag at each release, as well as in the manifest of the build summary: it kept
-  the previous tag, which may not exist on the registry. Sub-containers on a
-  third-party image (a broker, a database...) keep theirs.
-
-[Unreleased]: https://github.com/GladysAssistant/integration-template-js/commits/main
+[Unreleased]: https://github.com/guim31/gladys-switchbot/commits/main

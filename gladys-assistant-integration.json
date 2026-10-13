@@ -1,177 +1,577 @@
 {
   "manifest_version": 1,
   "type": "device",
-  "name": "Demo Devices Template",
+  "name": "SwitchBot",
   "description": {
-    "en": "Starter template showing sensors, a switch, a dimmable light and a smart plug.",
-    "fr": "Template de démarrage : capteurs, interrupteur, lampe variable et prise connectée."
+    "en": "SwitchBot devices through the official cloud API: bots, plugs, curtains, locks, sensors, lights.",
+    "fr": "Appareils SwitchBot par l'API cloud officielle : bots, prises, rideaux, serrures, capteurs, lampes.",
+    "de": "SwitchBot-Geräte über die offizielle Cloud-API: Bots, Steckdosen, Vorhänge, Schlösser, Sensoren.",
+    "es": "Dispositivos SwitchBot por la API oficial en la nube: bots, enchufes, cortinas, cerraduras, luces."
   },
   "version": "1.0.0",
-  "docker_image": "ghcr.io/gladysassistant/integration-template-js:1.0.0",
+  "docker_image": "ghcr.io/guim31/gladys-switchbot:1.0.0",
   "gladys_version": ">=5.1.0",
-  "cover_image": "https://raw.githubusercontent.com/GladysAssistant/integration-template-js/master/cover.png",
-  "categories": ["lighting", "security", "environment"],
-  "transports": ["local", "cloud"],
+  "cover_image": "https://raw.githubusercontent.com/guim31/gladys-switchbot/main/cover.png",
+  "categories": ["environment", "lighting", "security"],
+  "transports": ["cloud"],
+  "webhooks": [
+    {
+      "key": "events",
+      "label": {
+        "en": "SwitchBot device changes",
+        "fr": "Changements des appareils SwitchBot",
+        "de": "Änderungen der SwitchBot-Geräte",
+        "es": "Cambios de los dispositivos SwitchBot"
+      },
+      "mode": "fire_and_forget"
+    }
+  ],
   "config_schema": [
     {
       "key": "intro",
       "type": "section",
-      "label": { "en": "Getting started", "fr": "Pour commencer" },
+      "label": {
+        "en": "Your SwitchBot token",
+        "fr": "Votre jeton SwitchBot",
+        "de": "Dein SwitchBot-Token",
+        "es": "Su token de SwitchBot"
+      },
       "description": {
-        "en": "The demo weather station reads real data from the free Open-Meteo API: pick the coordinates to observe. No account, no API key.",
-        "fr": "La station météo de démonstration lit de vraies données via l'API gratuite Open-Meteo : choisissez les coordonnées à observer. Pas de compte, pas de clé d'API."
+        "en": "In the SwitchBot app (version 9 or later): Profile, Preferences, About, tap App Version 10 times, then Developer Options: copy the token and the secret key below. Devices that talk Bluetooth need a SwitchBot hub and their cloud service turned on in the app.",
+        "fr": "Dans l'application SwitchBot (version 9 ou plus) : Profil, Préférences, À propos, touchez 10 fois Version de l'application, puis Options développeur : copiez le jeton et la clé secrète ci-dessous. Les appareils Bluetooth passent par un hub SwitchBot, service cloud activé dans l'application.",
+        "de": "In der SwitchBot-App (ab Version 9): Profil, Einstellungen, Über, tippe 10-mal auf App-Version, dann Entwickleroptionen: Kopiere Token und geheimen Schlüssel hierher. Bluetooth-Geräte brauchen einen SwitchBot-Hub und den in der App aktivierten Cloud-Dienst.",
+        "es": "En la aplicación SwitchBot (versión 9 o posterior): Perfil, Preferencias, Acerca de, toque 10 veces Versión de la aplicación y luego Opciones de desarrollador: copie el token y la clave secreta aquí. Los dispositivos Bluetooth necesitan un hub SwitchBot y el servicio en la nube activado."
       },
       "links": [
         {
-          "url": "https://open-meteo.com/en/docs",
-          "label": { "en": "Open-Meteo documentation", "fr": "Documentation Open-Meteo" }
+          "url": "https://github.com/guim31/gladys-switchbot/blob/main/docs/en.md",
+          "label": {
+            "en": "Setup guide",
+            "fr": "Guide d'installation",
+            "de": "Installationsanleitung",
+            "es": "Guía de instalación"
+          }
+        },
+        {
+          "url": "https://github.com/OpenWonderLabs/SwitchBotAPI#getting-started",
+          "label": {
+            "en": "SwitchBot API documentation",
+            "fr": "Documentation de l'API SwitchBot",
+            "de": "Dokumentation der SwitchBot-API",
+            "es": "Documentación de la API de SwitchBot"
+          }
         }
       ]
     },
     {
-      "key": "latitude",
-      "type": "number",
-      "label": { "en": "Latitude", "fr": "Latitude" },
+      "key": "token",
+      "type": "secret",
+      "label": { "en": "Token", "fr": "Jeton (token)", "de": "Token", "es": "Token" },
       "description": {
-        "en": "Latitude used for the demo weather sensor.",
-        "fr": "Latitude utilisée par le capteur météo de démonstration."
+        "en": "The token shown under Developer Options in the SwitchBot app.",
+        "fr": "Le jeton affiché dans les Options développeur de l'application SwitchBot.",
+        "de": "Das Token aus den Entwickleroptionen der SwitchBot-App.",
+        "es": "El token que se muestra en Opciones de desarrollador de la aplicación SwitchBot."
       },
-      "placeholder": { "en": "e.g. 48.8566", "fr": "ex. 48.8566" },
-      "required": true,
-      "default": 48.8566,
-      "min": -90,
-      "max": 90
+      "required": true
     },
     {
-      "key": "longitude",
-      "type": "number",
-      "label": { "en": "Longitude", "fr": "Longitude" },
-      "description": {
-        "en": "Longitude used for the demo weather sensor.",
-        "fr": "Longitude utilisée par le capteur météo de démonstration."
+      "key": "secret",
+      "type": "secret",
+      "label": {
+        "en": "Secret key",
+        "fr": "Clé secrète",
+        "de": "Geheimer Schlüssel",
+        "es": "Clave secreta"
       },
-      "placeholder": { "en": "e.g. 2.3522", "fr": "ex. 2.3522" },
-      "required": true,
-      "default": 2.3522,
-      "min": -180,
-      "max": 180
+      "description": {
+        "en": "The secret key shown under the token. It signs every request and never leaves Gladys.",
+        "fr": "La clé secrète affichée sous le jeton. Elle signe chaque requête et ne quitte jamais Gladys.",
+        "de": "Der geheime Schlüssel unter dem Token. Er signiert jede Anfrage und verlässt Gladys nie.",
+        "es": "La clave secreta que aparece bajo el token. Firma cada solicitud y nunca sale de Gladys."
+      },
+      "required": true
     },
     {
-      "key": "unit",
+      "key": "poll_interval",
       "type": "select",
-      "label": { "en": "Temperature unit", "fr": "Unité de température" },
+      "label": {
+        "en": "Refresh interval",
+        "fr": "Intervalle de rafraîchissement",
+        "de": "Aktualisierungsintervall",
+        "es": "Intervalo de actualización"
+      },
+      "description": {
+        "en": "How often each device is read. SwitchBot allows 10,000 calls a day per account: automatic stays within half of it, and a shorter interval is lengthened when it would not.",
+        "fr": "Fréquence de lecture de chaque appareil. SwitchBot autorise 10 000 appels par jour et par compte : le mode automatique en utilise la moitié au plus, un intervalle plus court est allongé s'il la dépasserait.",
+        "de": "Wie oft jedes Gerät gelesen wird. SwitchBot erlaubt 10.000 Aufrufe pro Tag und Konto: Automatisch nutzt höchstens die Hälfte, ein kürzeres Intervall wird verlängert, wenn es mehr bräuchte.",
+        "es": "Frecuencia de lectura de cada dispositivo. SwitchBot permite 10 000 llamadas al día por cuenta: el modo automático usa como máximo la mitad y un intervalo más corto se alarga si la superara."
+      },
       "required": false,
-      "default": "celsius",
+      "default": "auto",
       "options": [
-        { "value": "celsius", "label": { "en": "Celsius", "fr": "Celsius" } },
-        { "value": "fahrenheit", "label": { "en": "Fahrenheit", "fr": "Fahrenheit" } }
+        {
+          "value": "auto",
+          "label": {
+            "en": "Automatic (by device count)",
+            "fr": "Automatique (selon le nombre d'appareils)",
+            "de": "Automatisch (nach Geräteanzahl)",
+            "es": "Automático (según el número de dispositivos)"
+          }
+        },
+        {
+          "value": "1",
+          "label": { "en": "1 minute", "fr": "1 minute", "de": "1 Minute", "es": "1 minuto" }
+        },
+        {
+          "value": "2",
+          "label": { "en": "2 minutes", "fr": "2 minutes", "de": "2 Minuten", "es": "2 minutos" }
+        },
+        {
+          "value": "5",
+          "label": { "en": "5 minutes", "fr": "5 minutes", "de": "5 Minuten", "es": "5 minutos" }
+        },
+        {
+          "value": "10",
+          "label": {
+            "en": "10 minutes",
+            "fr": "10 minutes",
+            "de": "10 Minuten",
+            "es": "10 minutos"
+          }
+        },
+        {
+          "value": "15",
+          "label": {
+            "en": "15 minutes",
+            "fr": "15 minutes",
+            "de": "15 Minuten",
+            "es": "15 minutos"
+          }
+        },
+        {
+          "value": "30",
+          "label": {
+            "en": "30 minutes",
+            "fr": "30 minutes",
+            "de": "30 Minuten",
+            "es": "30 minutos"
+          }
+        },
+        {
+          "value": "60",
+          "label": { "en": "1 hour", "fr": "1 heure", "de": "1 Stunde", "es": "1 hora" }
+        }
       ]
     },
     {
-      "key": "poll_frequency",
-      "type": "number",
-      "label": { "en": "Refresh interval (s)", "fr": "Intervalle de rafraîchissement (s)" },
+      "key": "webhook",
+      "type": "boolean",
+      "label": {
+        "en": "Real time through Gladys Plus",
+        "fr": "Temps réel par Gladys Plus",
+        "de": "Echtzeit über Gladys Plus",
+        "es": "Tiempo real con Gladys Plus"
+      },
       "description": {
-        "en": "How often sensors are polled, in seconds (one minute minimum).",
-        "fr": "Fréquence d'interrogation des capteurs, en secondes (une minute minimum)."
+        "en": "Needs Gladys Plus and its Open API key in the webhooks block. SwitchBot keeps ONE webhook per account: this replaces the one of another app (Home Assistant...).",
+        "fr": "Nécessite Gladys Plus et sa clé Open API dans le bloc webhooks. SwitchBot ne garde qu'UN webhook par compte : celui d'une autre application (Home Assistant…) est remplacé.",
+        "de": "Braucht Gladys Plus und dessen Open-API-Schlüssel im Webhook-Block. SwitchBot speichert EINEN Webhook pro Konto: Der einer anderen App (Home Assistant…) wird ersetzt.",
+        "es": "Requiere Gladys Plus y su clave Open API en el bloque de webhooks. SwitchBot guarda UN webhook por cuenta: se sustituye el de otra aplicación (Home Assistant…)."
       },
       "required": false,
-      "default": 300,
-      "min": 60,
-      "max": 3600
+      "default": false
+    },
+    {
+      "key": "ir_remotes",
+      "type": "boolean",
+      "label": {
+        "en": "IR remotes",
+        "fr": "Télécommandes IR",
+        "de": "IR-Fernbedienungen",
+        "es": "Mandos IR"
+      },
+      "description": {
+        "en": "Also publish the virtual infrared remotes of your hubs (TV, air conditioner...), for their power button and the \"Send an IR command\" scene action.",
+        "fr": "Publier aussi les télécommandes infrarouges virtuelles de vos hubs (TV, climatiseur…), pour leur bouton marche/arrêt et l'action de scène « Envoyer une commande IR ».",
+        "de": "Auch die virtuellen Infrarot-Fernbedienungen deiner Hubs (TV, Klimaanlage…) veröffentlichen, für ihren Ein/Aus-Knopf und die Szenenaktion „IR-Befehl senden“.",
+        "es": "Publicar también los mandos infrarrojos virtuales de sus hubs (TV, aire acondicionado…), para su botón de encendido y la acción de escena «Enviar un comando IR»."
+      },
+      "required": false,
+      "default": false
+    },
+    {
+      "key": "lock_control",
+      "type": "boolean",
+      "label": {
+        "en": "Allow locking and unlocking",
+        "fr": "Autoriser verrouillage et déverrouillage",
+        "de": "Ver- und Entriegeln erlauben",
+        "es": "Permitir bloquear y desbloquear"
+      },
+      "description": {
+        "en": "Off: the locks are read only. On: the locks added afterwards can be locked and unlocked from Gladys, its scenes and its assistants.",
+        "fr": "Désactivé : les serrures sont en lecture seule. Activé : les serrures ajoutées ensuite se verrouillent et se déverrouillent depuis Gladys, ses scènes et ses assistants.",
+        "de": "Aus: Die Schlösser werden nur gelesen. Ein: Danach hinzugefügte Schlösser lassen sich von Gladys, ihren Szenen und Assistenten ver- und entriegeln.",
+        "es": "Desactivado: las cerraduras son de solo lectura. Activado: las cerraduras añadidas después se bloquean y desbloquean desde Gladys, sus escenas y sus asistentes."
+      },
+      "required": false,
+      "default": false
+    },
+    {
+      "key": "language",
+      "type": "select",
+      "label": {
+        "en": "Language of the feature names",
+        "fr": "Langue des noms de fonctionnalités",
+        "de": "Sprache der Funktionsnamen",
+        "es": "Idioma de los nombres de las funciones"
+      },
+      "description": {
+        "en": "Names given to the features of new devices (Temperature, Position, Battery...).",
+        "fr": "Noms donnés aux fonctionnalités des nouveaux appareils (Température, Position, Batterie…).",
+        "de": "Namen, die den Funktionen neuer Geräte gegeben werden (Temperatur, Position, Batterie…).",
+        "es": "Nombres dados a las funciones de los nuevos dispositivos (Temperatura, Posición, Batería…)."
+      },
+      "required": false,
+      "default": "fr",
+      "options": [
+        {
+          "value": "en",
+          "label": { "en": "English", "fr": "Anglais", "de": "Englisch", "es": "Inglés" }
+        },
+        {
+          "value": "fr",
+          "label": { "en": "French", "fr": "Français", "de": "Französisch", "es": "Francés" }
+        },
+        {
+          "value": "de",
+          "label": { "en": "German", "fr": "Allemand", "de": "Deutsch", "es": "Alemán" }
+        },
+        {
+          "value": "es",
+          "label": { "en": "Spanish", "fr": "Espagnol", "de": "Spanisch", "es": "Español" }
+        }
+      ]
     }
   ],
   "actions": [
     {
-      "key": "test_weather",
-      "label": { "en": "Test the weather provider", "fr": "Tester le fournisseur météo" },
+      "key": "check_connection",
+      "label": {
+        "en": "Test the connection",
+        "fr": "Tester la connexion",
+        "de": "Verbindung testen",
+        "es": "Probar la conexión"
+      },
+      "description": {
+        "en": "Reads the device list (one API call) and shows the devices, the refresh pace and the calls of the day.",
+        "fr": "Lit la liste des appareils (un appel d'API) et affiche les appareils, le rythme de lecture et les appels du jour.",
+        "de": "Liest die Geräteliste (ein API-Aufruf) und zeigt Geräte, Abfragetakt und die Aufrufe des Tages.",
+        "es": "Lee la lista de dispositivos (una llamada a la API) y muestra los dispositivos, el ritmo de lectura y las llamadas del día."
+      },
       "timeout_seconds": 30
-    },
-    {
-      "key": "identify",
-      "label": { "en": "Identify a device", "fr": "Identifier un appareil" },
-      "fields": [
-        {
-          "key": "device",
-          "type": "select",
-          "source": "devices",
-          "label": { "en": "Device", "fr": "Appareil" },
-          "required": true
-        }
-      ]
     }
   ],
   "scene_triggers": [
     {
-      "key": "motion_detected",
-      "label": { "en": "Motion detected", "fr": "Mouvement détecté" },
+      "key": "contact_changed",
+      "label": {
+        "en": "SwitchBot door or window",
+        "fr": "Porte ou fenêtre SwitchBot",
+        "de": "SwitchBot-Tür oder -Fenster",
+        "es": "Puerta o ventana SwitchBot"
+      },
       "description": {
-        "en": "A demo motion sensor saw a person or an animal move.",
-        "fr": "Un détecteur de démonstration a vu bouger une personne ou un animal."
+        "en": "A contact sensor reports open, closed, or left open (the delay set in the SwitchBot app).",
+        "fr": "Un détecteur d'ouverture signale ouvert, fermé ou resté ouvert (délai réglé dans l'application SwitchBot).",
+        "de": "Ein Kontaktsensor meldet offen, geschlossen oder offen gelassen (Dauer in der SwitchBot-App eingestellt).",
+        "es": "Un sensor de apertura indica abierto, cerrado o abierto demasiado tiempo (plazo fijado en la aplicación SwitchBot)."
       },
       "fields": [
         {
           "key": "device",
           "type": "select",
           "source": "devices",
-          "label": { "en": "Sensor", "fr": "Détecteur" }
+          "label": {
+            "en": "Contact sensor",
+            "fr": "Détecteur d'ouverture",
+            "de": "Kontaktsensor",
+            "es": "Sensor de apertura"
+          }
         },
         {
-          "key": "target",
+          "key": "state",
           "type": "multi_select",
-          "label": { "en": "What moved", "fr": "Ce qui a bougé" },
+          "label": { "en": "State", "fr": "État", "de": "Zustand", "es": "Estado" },
           "options": [
-            { "value": "person", "label": { "en": "Person", "fr": "Personne" } },
-            { "value": "animal", "label": { "en": "Animal", "fr": "Animal" } }
+            {
+              "value": "open",
+              "label": { "en": "Open", "fr": "Ouvert", "de": "Offen", "es": "Abierto" }
+            },
+            {
+              "value": "closed",
+              "label": { "en": "Closed", "fr": "Fermé", "de": "Geschlossen", "es": "Cerrado" }
+            },
+            {
+              "value": "left_open",
+              "label": {
+                "en": "Left open",
+                "fr": "Resté ouvert",
+                "de": "Offen gelassen",
+                "es": "Abierto demasiado tiempo"
+              }
+            }
           ]
         }
       ],
       "variables": [
         {
-          "key": "target",
+          "key": "device_name",
           "type": "string",
-          "label": { "en": "What moved", "fr": "Ce qui a bougé" }
+          "label": {
+            "en": "Device name",
+            "fr": "Nom de l'appareil",
+            "de": "Gerätename",
+            "es": "Nombre del dispositivo"
+          }
+        },
+        {
+          "key": "state",
+          "type": "string",
+          "label": { "en": "State", "fr": "État", "de": "Zustand", "es": "Estado" }
+        }
+      ]
+    },
+    {
+      "key": "motion_detected",
+      "label": {
+        "en": "SwitchBot motion detected",
+        "fr": "Mouvement détecté par SwitchBot",
+        "de": "SwitchBot erkennt Bewegung",
+        "es": "Movimiento detectado por SwitchBot"
+      },
+      "description": {
+        "en": "A motion sensor, the motion detector of a contact sensor or a Hub 3 starts seeing motion.",
+        "fr": "Un détecteur de mouvement, celui d'un détecteur d'ouverture ou un Hub 3 commence à voir du mouvement.",
+        "de": "Ein Bewegungsmelder, der eines Kontaktsensors oder ein Hub 3 erkennt eine Bewegung.",
+        "es": "Un sensor de movimiento, el de un sensor de apertura o un Hub 3 empieza a detectar movimiento."
+      },
+      "fields": [
+        {
+          "key": "device",
+          "type": "select",
+          "source": "devices",
+          "label": { "en": "Sensor", "fr": "Détecteur", "de": "Sensor", "es": "Sensor" }
+        }
+      ],
+      "variables": [
+        {
+          "key": "device_name",
+          "type": "string",
+          "label": {
+            "en": "Device name",
+            "fr": "Nom de l'appareil",
+            "de": "Gerätename",
+            "es": "Nombre del dispositivo"
+          }
+        }
+      ]
+    },
+    {
+      "key": "leak_detected",
+      "label": {
+        "en": "SwitchBot water leak",
+        "fr": "Fuite d'eau SwitchBot",
+        "de": "SwitchBot-Wasserleck",
+        "es": "Fuga de agua SwitchBot"
+      },
+      "description": {
+        "en": "A water leak detector goes from dry to wet.",
+        "fr": "Un détecteur de fuite passe de sec à mouillé.",
+        "de": "Ein Wasserlecksensor wechselt von trocken zu nass.",
+        "es": "Un detector de fugas pasa de seco a mojado."
+      },
+      "fields": [
+        {
+          "key": "device",
+          "type": "select",
+          "source": "devices",
+          "label": {
+            "en": "Leak detector",
+            "fr": "Détecteur de fuite",
+            "de": "Wasserlecksensor",
+            "es": "Detector de fugas"
+          }
+        }
+      ],
+      "variables": [
+        {
+          "key": "device_name",
+          "type": "string",
+          "label": {
+            "en": "Device name",
+            "fr": "Nom de l'appareil",
+            "de": "Gerätename",
+            "es": "Nombre del dispositivo"
+          }
+        }
+      ]
+    },
+    {
+      "key": "battery_low",
+      "label": {
+        "en": "SwitchBot battery low",
+        "fr": "Pile faible SwitchBot",
+        "de": "SwitchBot-Batterie schwach",
+        "es": "Batería baja SwitchBot"
+      },
+      "description": {
+        "en": "A device battery falls to 20 % or less. Once, until it goes back above 30 %.",
+        "fr": "La batterie d'un appareil descend à 20 % ou moins. Une fois, jusqu'à ce qu'elle repasse au-dessus de 30 %.",
+        "de": "Die Batterie eines Geräts fällt auf 20 % oder weniger. Einmal, bis sie wieder über 30 % liegt.",
+        "es": "La batería de un dispositivo baja al 20 % o menos. Una vez, hasta que vuelva a superar el 30 %."
+      },
+      "fields": [
+        {
+          "key": "device",
+          "type": "select",
+          "source": "devices",
+          "label": { "en": "Device", "fr": "Appareil", "de": "Gerät", "es": "Dispositivo" }
+        }
+      ],
+      "variables": [
+        {
+          "key": "device_name",
+          "type": "string",
+          "label": {
+            "en": "Device name",
+            "fr": "Nom de l'appareil",
+            "de": "Gerätename",
+            "es": "Nombre del dispositivo"
+          }
+        },
+        {
+          "key": "battery",
+          "type": "number",
+          "label": {
+            "en": "Battery (%)",
+            "fr": "Batterie (%)",
+            "de": "Batterie (%)",
+            "es": "Batería (%)"
+          }
         }
       ]
     }
   ],
   "scene_actions": [
     {
-      "key": "identify_device",
-      "label": { "en": "Identify a device", "fr": "Identifier un appareil" },
-      "description": {
-        "en": "Make a device signal itself (the demo light blinks).",
-        "fr": "Fait se signaler un appareil (la lampe de démonstration clignote)."
+      "key": "press_bot",
+      "label": {
+        "en": "Press a SwitchBot Bot",
+        "fr": "Appuyer avec un Bot SwitchBot",
+        "de": "SwitchBot-Bot drücken lassen",
+        "es": "Pulsar con un Bot SwitchBot"
       },
-      "timeout_seconds": 15,
+      "description": {
+        "en": "One press of the Bot, whatever its mode.",
+        "fr": "Un appui du Bot, quel que soit son mode.",
+        "de": "Ein Druck des Bots, egal in welchem Modus.",
+        "es": "Una pulsación del Bot, sea cual sea su modo."
+      },
+      "timeout_seconds": 30,
       "fields": [
         {
           "key": "device",
           "type": "select",
           "source": "devices",
-          "label": { "en": "Device", "fr": "Appareil" },
+          "label": { "en": "Bot", "fr": "Bot", "de": "Bot", "es": "Bot" },
           "required": true
         }
-      ],
-      "outputs": [
+      ]
+    },
+    {
+      "key": "send_ir_command",
+      "label": {
+        "en": "Send a SwitchBot IR command",
+        "fr": "Envoyer une commande IR SwitchBot",
+        "de": "SwitchBot-IR-Befehl senden",
+        "es": "Enviar un comando IR SwitchBot"
+      },
+      "description": {
+        "en": "A button of a virtual IR remote: a standard command or the name of a custom button.",
+        "fr": "Un bouton d'une télécommande IR virtuelle : une commande standard ou le nom d'un bouton personnalisé.",
+        "de": "Eine Taste einer virtuellen IR-Fernbedienung: ein Standardbefehl oder der Name einer eigenen Taste.",
+        "es": "Un botón de un mando IR virtual: un comando estándar o el nombre de un botón personalizado."
+      },
+      "timeout_seconds": 30,
+      "fields": [
         {
-          "key": "signalled",
-          "type": "boolean",
-          "label": { "en": "Device signalled", "fr": "Appareil signalé" }
+          "key": "device",
+          "type": "select",
+          "source": "devices",
+          "label": {
+            "en": "IR remote",
+            "fr": "Télécommande IR",
+            "de": "IR-Fernbedienung",
+            "es": "Mando IR"
+          },
+          "required": true
+        },
+        {
+          "key": "command",
+          "type": "string",
+          "label": { "en": "Command", "fr": "Commande", "de": "Befehl", "es": "Comando" },
+          "description": {
+            "en": "turnOn, turnOff, volumeAdd, channelAdd, setAll... or a custom button name, case-sensitive.",
+            "fr": "turnOn, turnOff, volumeAdd, channelAdd, setAll… ou le nom d'un bouton personnalisé, à la casse près.",
+            "de": "turnOn, turnOff, volumeAdd, channelAdd, setAll… oder der Name einer eigenen Taste, Groß- und Kleinschreibung beachten.",
+            "es": "turnOn, turnOff, volumeAdd, channelAdd, setAll… o el nombre de un botón personalizado, respetando mayúsculas."
+          },
+          "placeholder": {
+            "en": "e.g. volumeAdd",
+            "fr": "ex. volumeAdd",
+            "de": "z. B. volumeAdd",
+            "es": "p. ej. volumeAdd"
+          },
+          "required": true
+        },
+        {
+          "key": "parameter",
+          "type": "string",
+          "label": {
+            "en": "Parameter (optional)",
+            "fr": "Paramètre (facultatif)",
+            "de": "Parameter (optional)",
+            "es": "Parámetro (opcional)"
+          },
+          "description": {
+            "en": "Only for the commands that take one: setAll (26,1,3,on), SetChannel (15).",
+            "fr": "Seulement pour les commandes qui en prennent un : setAll (26,1,3,on), SetChannel (15).",
+            "de": "Nur für Befehle, die einen brauchen: setAll (26,1,3,on), SetChannel (15).",
+            "es": "Solo para los comandos que lo requieren: setAll (26,1,3,on), SetChannel (15)."
+          },
+          "placeholder": {
+            "en": "e.g. 26,1,3,on",
+            "fr": "ex. 26,1,3,on",
+            "de": "z. B. 26,1,3,on",
+            "es": "p. ej. 26,1,3,on"
+          }
         }
       ]
     }
   ],
   "widgets": [
     {
-      "key": "demo_status",
-      "label": { "en": "Demo status", "fr": "État de la démo" },
+      "key": "overview",
+      "label": { "en": "SwitchBot", "fr": "SwitchBot", "de": "SwitchBot", "es": "SwitchBot" },
       "description": {
-        "en": "Live temperature and plug power, plug connection and observed location.",
-        "fr": "Température et puissance en direct, connexion de la prise, position observée."
+        "en": "Temperatures, open doors and windows, locks, water leaks, low batteries.",
+        "fr": "Températures, portes et fenêtres ouvertes, serrures, fuites d'eau, piles faibles.",
+        "de": "Temperaturen, offene Türen und Fenster, Schlösser, Wasserlecks, schwache Batterien.",
+        "es": "Temperaturas, puertas y ventanas abiertas, cerraduras, fugas de agua, baterías bajas."
       },
-      "icon": "activity",
-      "action_timeout_seconds": 15
+      "icon": "thermometer"
     }
   ]
 }

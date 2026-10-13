@@ -1,61 +1,215 @@
-# Demo Devices Template
+# SwitchBot
 
-This is the user documentation of the integration. Gladys re-hosts this file
-and shows a permanent **Documentation** link to it in the Configuration screen
-(in the user's language, with English as the fallback) — it is when
-configuring that the user needs it most. Keep the short onboarding hints in
-the `section` blocks of the manifest `config_schema`; put the long
-step-by-step (screenshots, troubleshooting…) here.
+Control your [SwitchBot](https://www.switch-bot.com) devices from Gladys through the official
+SwitchBot cloud API (v1.1): bots, plugs, curtains and blinds, locks, thermometers, contact, motion
+and water leak sensors, lights, humidifier, air purifier, fans, robot vacuums, and the infrared
+remotes of your hubs.
 
-## What you get
+> **Developed without the hardware: feedback welcome.** This integration was built and tested on
+> the responses documented by SwitchBot and on the test data of the Home Assistant integration,
+> not on physical devices nor on a real SwitchBot account. If something does not work as
+> described, say so on the [Gladys forum](https://community.gladysassistant.com) or in the
+> [issues](https://github.com/guim31/gladys-switchbot/issues).
+>
+> Not affiliated with SwitchBot (Wonderlabs). SwitchBot is a trademark of its owner.
 
-Six demo devices show up after installation: a weather station (real data
-from Open-Meteo), a switch, a dimmable light, a smart plug with power
-metering, a motion sensor and a camera.
+## What you need
+
+- Gladys Assistant 5.1.0 or later, with an Internet connection (the integration talks to the
+  SwitchBot cloud, not to the devices on your network).
+- A SwitchBot account and the SwitchBot app, version 9 or later.
+- For the devices that talk Bluetooth (Bot, Curtain, Meter, Contact Sensor, Lock...): a
+  SwitchBot hub (Hub Mini, Hub 2, Hub 3...) and **Cloud Services** turned on for each device in
+  the SwitchBot app. Wi-Fi devices (plugs, lights, Hub 2...) need nothing more.
+- Optional, for real time: a Gladys Plus subscription (see below).
 
 ## Configuration
 
-1. Open the **Configuration** tab of the integration.
-2. Set the **latitude** and **longitude** the demo weather station should
-   observe (they default to Paris), and pick your temperature unit.
-   The **refresh interval** sets how often the weather station and the
-   plug's power are read: every 5 minutes by default, every minute at most.
-3. Save: the devices appear in the **Discovery** tab, ready to be added.
+1. In the SwitchBot app: **Profile** → **Preferences** → **About**, tap **App Version** 10 times,
+   then open **Developer Options**: the app shows a **token** and a **secret key**.
+2. In Gladys: **Integrations** → **SwitchBot** → **Configuration**, paste the token and the secret
+   key, save. The status turns green and the integration reads your device list.
+3. Open the **Discovery** tab: every supported device is there, with the name given in the
+   SwitchBot app. Click **Add**, choose a room, save. Only the devices you add are read.
+4. The **Test the connection** button shows what the integration found: devices, those not
+   supported, IR remotes, the refresh pace and the API calls of the day.
 
-The **Prefer the local connection** toggle drives the demo plug: it reports
-the channel it actually uses as a badge (local or cloud), with an orange dot
-when it runs degraded (local refused, cloud fallback).
+Other settings:
 
-## Actions
+- **IR remotes**: also publishes the virtual infrared remotes of your hubs (see below).
+- **Allow locking and unlocking**: off by default, the locks are then read only (see below).
+- **Language of the feature names**: the names given to the features of the devices added after
+  the change (French by default). The other texts follow the language of your Gladys.
 
-- **Test the weather provider** — performs a live request to Open-Meteo and
-  shows the current temperature and humidity under the button.
-- **Identify a device** — pick one of your devices in the list and it will
-  signal itself (the demo light "blinks" in the logs).
+The token and the secret key stay in the Gladys configuration: they sign every request and never
+appear in the logs. Generating a new token in the app invalidates the old one: paste the new one.
 
-## Scenes
+### Refresh interval and quota
 
-The integration adds its own cards to the scene editor (Gladys 5.1 or
-later), under the **Integrations** category:
+SwitchBot allows **10,000 API calls per day and per account**, every app using the same token
+included. Over it, SwitchBot refuses every call until midnight. The integration reads each added
+device once per period (one call per device):
 
-- **Motion detected** (trigger) — starts the scene when a demo motion sensor
-  sees something move. Optionally pick the sensor and what moved (person,
-  animal); left empty, any detection matches. The following actions can
-  read what moved with `{{triggerEvent.data.target}}`.
-- **Identify a device** (action) — makes the chosen device signal itself.
-  It returns whether the device could signal itself, so the following
-  actions can depend on it.
+- **Automatic** (default): every 2 minutes at least, and slower when you have many devices, so
+  that polling never uses more than half of the quota. Examples: 10 devices every 3 minutes, 26
+  every 8 minutes, 50 every 15 minutes.
+- A fixed interval (1 minute to 1 hour) is lengthened when it would use more than half of the
+  quota.
 
-## Dashboard
+The other half stays for your commands, the reads after each command (one call, a few seconds
+later), the real-time reads and your other apps. The integration counts its calls (saved under
+`/data`, so a restart does not forget them): past 9,000 calls, polling pauses until midnight and
+commands keep working. It cannot see the calls of your other apps (Home Assistant, scripts...):
+lengthen the interval if you share the token.
 
-Add the **Demo status** widget to a dashboard: it shows the live
-temperature of the weather station and the power of the office plug, the
-connection the plug currently uses (orange when degraded) and the observed
-location. Its **Identify the light** button makes the demo light signal
-itself.
+### Real time with Gladys Plus (optional)
+
+Without it, a change made outside Gladys (a door opened, a button pressed on the device) shows up
+at the next read. With a Gladys Plus subscription, SwitchBot can tell Gladys at once:
+
+1. In Gladys Plus, create an **Open API key** (**Settings** → **Open API**).
+2. In the SwitchBot integration configuration, paste it in the **Gladys Plus webhooks** block.
+3. Turn on **Real time through Gladys Plus** and save.
+
+The integration then registers the Gladys Plus address at SwitchBot. Each change notice triggers a
+read of that device through the API (a notice is a trigger, never applied as is), and those devices
+are polled every 30 minutes only, to catch a lost notice. **SwitchBot keeps a single webhook per
+account**: registering this one removes the one another app (Home Assistant...) had registered.
+Turning the option off removes the Gladys address.
+
+## What each device offers
+
+| Device                                                      | Features in Gladys                                                                            |
+| ----------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| Bot                                                         | Press / switch (in press mode any command presses, then the state falls back to off), battery |
+| Plug, Relay Switch 1                                        | On/off                                                                                        |
+| Plug Mini (US, JP)                                          | On/off, power draw (W), voltage (V), current (A)                                              |
+| Plug Mini (EU), Relay Switch 1PM                            | On/off, power draw, voltage, current, energy used today (kWh)                                 |
+| Curtain, Curtain 3, Roller Shade, Blind Tilt                | Position (100 = open), open / close / stop, battery (not on the Blind Tilt)                   |
+| Lock, Lock Pro, Lock Ultra, Lock Vision...                  | Lock state, door (not on the Lock Lite), battery; lock / unlock with the option               |
+| Meter, Meter Plus, Outdoor Meter, Meter Pro                 | Temperature, humidity, battery                                                                |
+| Meter Pro CO2                                               | Temperature, humidity, CO2 (ppm), battery                                                     |
+| Hub 2, Hub 3                                                | Temperature, humidity, light level (1 to 20); motion on the Hub 3                             |
+| Contact Sensor                                              | Opening (open / closed), motion, battery                                                      |
+| Motion Sensor                                               | Motion, battery                                                                               |
+| Water Leak Detector                                         | Water leak, battery                                                                           |
+| Color Bulb, Strip Light 3, Floor Lamp, RGBICWW strip / lamp | On/off, brightness, colour, colour temperature                                                |
+| Strip Light, RGBIC neon rope lights                         | On/off, brightness, colour                                                                    |
+| Ceiling Light, Ceiling Light Pro                            | On/off, brightness, colour temperature                                                        |
+| Humidifier                                                  | On/off, humidity, temperature, water tank (low when empty)                                    |
+| Air Purifier (VOC, PM2.5, table models)                     | On/off, mode (normal, auto, sleep, pet)                                                       |
+| Circulator Fan, Battery Circulator Fan, Standing Fan        | On/off, speed (1 to 100 %, switches the fan to direct mode), battery on battery models        |
+| Robot Vacuum S1, S1 Plus, K10+, K10+ Pro                    | State, cleaning (start / stop), return to base, battery                                       |
+| Robot Vacuum S10, S20, K10+ Pro Combo, K20+ Pro, K11+       | State, return to base, battery (start them from the SwitchBot app)                            |
+
+Other SwitchBot devices (Hub Mini without sensors, cameras, keypads...) are not published: the
+**Test the connection** button lists them. Some features are refreshed with a delay: after a
+command, the device is read again 5 seconds later (15 seconds for a curtain).
+
+### Curtains and blinds
+
+Gladys reads a position as 100 = open, 0 = closed: the integration converts SwitchBot's positions,
+which count the other way. A Blind Tilt is open at its middle position and closed at both ends: its
+position reads 100 when the slats are open, and setting a position keeps the direction (up or down)
+it last used. Only the curtains can stop on command.
+
+### Locks
+
+A door lock is a security device: by default the integration only reads it (locked, unlocked,
+moving, jammed or half-locked, and the door state). To lock and unlock from Gladys (dashboard,
+scenes, voice assistants linked to Gladys), turn on **Allow locking and unlocking**, then add the
+lock (or update it from the Discovery tab). Think about who and what can reach those commands.
+
+### IR remotes
+
+With the **IR remotes** option, every virtual remote of your hubs (TV, air conditioner, fan,
+light...) becomes a device with an on/off button and the last command sent. SwitchBot gives no
+state for them: the on/off shows the last command sent, not the appliance. Any other button,
+custom ones included, is sent with the **Send a SwitchBot IR command** scene action. The "Others"
+remotes only have custom buttons.
+
+## Dashboard widget
+
+The **SwitchBot** widget shows, at a glance:
+
+- up to six temperatures (live tiles of your thermometers and hubs);
+- open doors and windows (and those left open), locks not locked or jammed, water leaks, low
+  batteries;
+- the API calls of the day, and the SwitchBot cloud when it refuses or does not answer.
+
+It reads nothing from SwitchBot by itself: it shows the last reads.
+
+## Scene triggers
+
+In the scene editor, **Integrations** category:
+
+- **SwitchBot door or window**: a contact sensor reports open, closed, or **left open** (the delay
+  set in the SwitchBot app, which a simple state cannot tell). Filters: the sensor, the states.
+  Variables: device name, state.
+- **SwitchBot motion detected**: a motion sensor, the motion detector of a contact sensor or a Hub
+  3 starts seeing motion. Variable: device name.
+- **SwitchBot water leak**: a leak detector goes from dry to wet. Variable: device name.
+- **SwitchBot battery low**: a battery falls to 20 % or less, once, until it goes back above 30 %.
+  Variables: device name, battery.
+
+They fire on a change only, never at start-up. Without real time, a change shorter than the refresh
+interval (a short motion) can go unnoticed: use the Gladys Plus option for motion.
+
+## Scene actions
+
+- **Press a SwitchBot Bot**: one press of the chosen Bot, whatever its mode.
+- **Send a SwitchBot IR command**: a remote (with the IR remotes option), a command and an optional
+  parameter. Standard commands: `turnOn`, `turnOff`, `volumeAdd`, `volumeSub`, `channelAdd`,
+  `channelSub`, `setMute`, `Play`, `Pause`, `Stop`, `Next`, `Previous`, `swing`, `lowSpeed`,
+  `middleSpeed`, `highSpeed`, `brightnessUp`, `brightnessDown`, `SetChannel` (parameter: the
+  channel) and `setAll` for an air conditioner (parameter: `temperature,mode,fan,power`, for
+  example `26,2,1,on`: mode 1 auto, 2 cool, 3 dry, 4 fan, 5 heat; fan 1 auto, 2 low, 3 medium, 4
+  high). Any other name is a custom button of the remote, case-sensitive.
+
+## Scene examples
+
+- **Door left open**: trigger _SwitchBot door or window_, state _Left open_ → send a message
+  "{{triggerEvent.data.device_name}} is still open".
+- **Water leak**: trigger _SwitchBot water leak_ → message "Water leak:
+  {{triggerEvent.data.device_name}}", then turn off the washing machine plug.
+- **Morning coffee**: at 7:00 on weekdays → _Press a SwitchBot Bot_ (the coffee maker's Bot), then
+  open the living room curtain to 100 %.
+- **Cool down**: when the bedroom temperature goes above 27 °C → _Send a SwitchBot IR command_,
+  `setAll` with `24,2,1,on` to the air conditioner remote.
+- **Batteries**: trigger _SwitchBot battery low_ → message "Change the battery of
+  {{triggerEvent.data.device_name}} ({{triggerEvent.data.battery}} %)".
 
 ## Troubleshooting
 
-The integration logs everything it does: check the integration logs from the
-Gladys UI (or `docker logs` on the host) with `LOG_LEVEL=debug` for the full
-detail.
+- **"SwitchBot refused the credentials"**: check the token and the secret key (copy them again from
+  the app; a new token invalidates the old one). The same answer comes when the daily quota is
+  spent: wait for midnight, and lengthen the interval if you share the token with another app.
+  The integration retries every 30 minutes.
+- **"The SwitchBot cloud does not answer"**: check the Internet connection of Gladys. The
+  integration retries every 5 minutes.
+- **A device is missing from Discovery**: it may not be supported (see **Test the connection**),
+  or its Cloud Services are off in the SwitchBot app. Search again from the Discovery tab once
+  fixed.
+- **A device shows as unreachable**: SwitchBot says the device or its hub is offline (out of
+  battery, out of Bluetooth range of the hub, hub unplugged).
+- **Values are late**: that is the refresh interval (see **Test the connection**); turn on the
+  Gladys Plus real time for doors and motion.
+- **Real time does not work**: check that the Open API key is pasted in the Gladys Plus webhooks
+  block and the option is on; another app may have registered its own webhook since (SwitchBot
+  keeps one): save the configuration again.
+- **Logs**: set `LOG_LEVEL=debug` on the integration to see every read; the token and the secret
+  key never appear in them.
+
+## Limits
+
+- Cloud only: no local Bluetooth control, the devices need a hub and an Internet connection, and
+  SwitchBot's servers must answer.
+- 10,000 API calls a day per account: values are refreshed every few minutes, not instantly,
+  unless the Gladys Plus real time is on.
+- The SwitchBot API is for personal use (see its terms).
+- No state for the IR remotes; no cleaning programs for the newer robot vacuums; no fan modes,
+  night lights or child locks; no keypads, cameras, video doorbells, thermostats or Relay Switch
+  2PM yet.
+- The integration only counts its own API calls, not those of your other apps.
+- Developed without the hardware nor a SwitchBot account: field names and values come from the
+  SwitchBot documentation and from the Home Assistant tests.
