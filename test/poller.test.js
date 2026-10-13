@@ -9,6 +9,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { HEARTBEAT_MS, RETRY_AUTH_MS } from '../src/hub.js';
+import { RESTART_BURST } from '../src/poller.js';
 import { PAUSE_THRESHOLD, pollPeriodMs } from '../src/quota.js';
 import { createWorld } from './helpers/world.js';
 
@@ -151,4 +152,19 @@ test('only changed values are published, with a heartbeat under 12 hours', async
     assert.ok(call.arguments[1].heartbeat <= 12 * 3_600_000);
   }
   assert.equal(HEARTBEAT_MS, 6 * 3_600_000);
+});
+
+test('a restart reads a first batch at once, the ticks read the others', async () => {
+  const time = clock();
+  const world = await createWorld({ now: time.now });
+  const before = world.cloud.count('status');
+  await world.gladys.fake.configUpdated({ ...world.gladys.fake.config, poll_interval: '5' });
+  assert.equal(world.cloud.count('status') - before, RESTART_BURST);
+  for (let i = 0; i < 8; i += 1) {
+    await world.hub.poller.tick();
+  }
+  assert.equal(world.cloud.count('status') - before, 26);
+  // Then nothing until the period is over.
+  await world.hub.poller.tick();
+  assert.equal(world.cloud.count('status') - before, 26);
 });

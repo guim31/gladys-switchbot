@@ -26,15 +26,17 @@ ventiladores, aspiradoras robot y los mandos infrarrojos de sus hubs.
 
 ## Configuración
 
-1. En la aplicación SwitchBot: **Perfil** → **Preferencias** → **Acerca de**, toque 10 veces
+1. Instale la integración: en Gladys, **Integraciones** → **Instalar desde GitHub** con
+   `https://github.com/guim31/gladys-switchbot`, o desde el catálogo cuando aparezca en él.
+2. En la aplicación SwitchBot: **Perfil** → **Preferencias** → **Acerca de**, toque 10 veces
    **Versión de la aplicación** y abra **Opciones de desarrollador**: la aplicación muestra un
    **token** y una **clave secreta**.
-2. En Gladys: **Integraciones** → **SwitchBot** → **Configuración**, pegue el token y la clave
+3. En Gladys: **Integraciones** → **SwitchBot** → **Configuración**, pegue el token y la clave
    secreta y guarde. El estado pasa a verde y la integración lee la lista de sus dispositivos.
-3. Abra la pestaña **Descubrir**: cada dispositivo compatible aparece allí, con el nombre dado en la
+4. Abra la pestaña **Descubrir**: cada dispositivo compatible aparece allí, con el nombre dado en la
    aplicación SwitchBot. Pulse **Añadir**, elija una habitación y guarde. Solo se leen los
    dispositivos añadidos.
-4. El botón **Probar la conexión** muestra lo que ha encontrado la integración: dispositivos, los
+5. El botón **Probar la conexión** muestra lo que ha encontrado la integración: dispositivos, los
    no compatibles, mandos IR, el ritmo de lectura y las llamadas a la API del día.
 
 Otros ajustes:

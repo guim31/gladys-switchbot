@@ -25,15 +25,17 @@ Saugroboter und die Infrarot-Fernbedienungen deiner Hubs.
 
 ## Konfiguration
 
-1. In der SwitchBot-App: **Profil** → **Einstellungen** → **Über**, tippe 10-mal auf
+1. Installiere die Integration: in Gladys **Integrationen** → **Von GitHub installieren** mit
+   `https://github.com/guim31/gladys-switchbot`, oder aus dem Katalog, sobald sie dort steht.
+2. In der SwitchBot-App: **Profil** → **Einstellungen** → **Über**, tippe 10-mal auf
    **App-Version** und öffne dann die **Entwickleroptionen**: Die App zeigt ein **Token** und einen
    **geheimen Schlüssel**.
-2. In Gladys: **Integrationen** → **SwitchBot** → **Konfiguration**, füge Token und geheimen
+3. In Gladys: **Integrationen** → **SwitchBot** → **Konfiguration**, füge Token und geheimen
    Schlüssel ein und speichere. Der Status wird grün und die Integration liest deine Geräteliste.
-3. Öffne den Tab **Entdecken**: Jedes unterstützte Gerät steht dort, mit dem Namen aus der
+4. Öffne den Tab **Entdecken**: Jedes unterstützte Gerät steht dort, mit dem Namen aus der
    SwitchBot-App. Klicke auf **Hinzufügen**, wähle einen Raum und speichere. Nur hinzugefügte
    Geräte werden gelesen.
-4. Der Knopf **Verbindung testen** zeigt, was die Integration gefunden hat: Geräte, nicht
+5. Der Knopf **Verbindung testen** zeigt, was die Integration gefunden hat: Geräte, nicht
    unterstützte Geräte, IR-Fernbedienungen, den Abfragetakt und die API-Aufrufe des Tages.
 
 Weitere Einstellungen:

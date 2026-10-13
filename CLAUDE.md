@@ -291,3 +291,6 @@ long, et sur un « Sie »/« Ihr… » de politesse en allemand. Le store exige 
 "command"`, tout autre nom = bouton personnalisé en `"customize"`, sensible à la casse ; type
   `Others` = boutons personnalisés seulement.
 - Serrures : lecture seule par défaut (`lock_control`), règle « sécurité » du mainteneur.
+- Au (re)démarrage, seuls 10 appareils sont lus d'un coup (`RESTART_BURST`), les autres par les
+  ticks suivants (2 toutes les 5 s) : une rafale complète sur un grand parc dépasserait les 300
+  états par minute du cœur. Un appareil ajouté dans Gladys est lu aussitôt.

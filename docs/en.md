@@ -25,13 +25,15 @@ remotes of your hubs.
 
 ## Configuration
 
-1. In the SwitchBot app: **Profile** → **Preferences** → **About**, tap **App Version** 10 times,
+1. Install the integration: in Gladys, **Integrations** → **Install from GitHub** with
+   `https://github.com/guim31/gladys-switchbot`, or from the catalog once it is listed.
+2. In the SwitchBot app: **Profile** → **Preferences** → **About**, tap **App Version** 10 times,
    then open **Developer Options**: the app shows a **token** and a **secret key**.
-2. In Gladys: **Integrations** → **SwitchBot** → **Configuration**, paste the token and the secret
+3. In Gladys: **Integrations** → **SwitchBot** → **Configuration**, paste the token and the secret
    key, save. The status turns green and the integration reads your device list.
-3. Open the **Discovery** tab: every supported device is there, with the name given in the
+4. Open the **Discovery** tab: every supported device is there, with the name given in the
    SwitchBot app. Click **Add**, choose a room, save. Only the devices you add are read.
-4. The **Test the connection** button shows what the integration found: devices, those not
+5. The **Test the connection** button shows what the integration found: devices, those not
    supported, IR remotes, the refresh pace and the API calls of the day.
 
 Other settings:

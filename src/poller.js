@@ -21,6 +21,9 @@
 
 const TICK_MS = 5_000;
 const PER_TICK = 2;
+// Read at once on a (re)start; the ticks catch up with the others. A full
+// burst on a large fleet would pass the 300 states a minute the core takes.
+export const RESTART_BURST = 10;
 
 /**
  * @param {object} options
@@ -74,7 +77,10 @@ export function createPoller({ hub, timers = true, now = () => Date.now(), tickM
       }
     },
 
-    /** (Re)start: forget the previous reads, read every added device now. */
+    /**
+     * (Re)start: forget the previous reads and read the first added devices
+     * now; the others are due at once and read by the next ticks.
+     */
     async restart() {
       stopped = false;
       lastPolledAt.clear();
@@ -82,7 +88,7 @@ export function createPoller({ hub, timers = true, now = () => Date.now(), tickM
       if (!hub.isConnected() || !hub.pollingAllowed()) {
         return;
       }
-      for (const entry of hub.pollable()) {
+      for (const entry of hub.pollable().slice(0, RESTART_BURST)) {
         await poll(entry);
       }
     },

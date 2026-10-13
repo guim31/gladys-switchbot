@@ -26,15 +26,17 @@ ventilateurs, aspirateurs robots, et les télécommandes infrarouges de vos hubs
 
 ## Configuration
 
-1. Dans l'application SwitchBot : **Profil** → **Préférences** → **À propos**, touchez 10 fois
+1. Installez l'intégration : dans Gladys, **Intégrations** → **Installer depuis GitHub** avec
+   `https://github.com/guim31/gladys-switchbot`, ou depuis le catalogue une fois qu'elle y figure.
+2. Dans l'application SwitchBot : **Profil** → **Préférences** → **À propos**, touchez 10 fois
    **Version de l'application**, puis ouvrez **Options développeur** : l'application affiche un
    **jeton** (token) et une **clé secrète**.
-2. Dans Gladys : **Intégrations** → **SwitchBot** → **Configuration**, collez le jeton et la clé
+3. Dans Gladys : **Intégrations** → **SwitchBot** → **Configuration**, collez le jeton et la clé
    secrète, enregistrez. Le statut passe au vert et l'intégration lit la liste de vos appareils.
-3. Ouvrez l'onglet **Découverte** : chaque appareil pris en charge y figure, avec le nom donné dans
+4. Ouvrez l'onglet **Découverte** : chaque appareil pris en charge y figure, avec le nom donné dans
    l'application SwitchBot. Cliquez sur **Ajouter**, choisissez une pièce, enregistrez. Seuls les
    appareils ajoutés sont lus.
-4. Le bouton **Tester la connexion** montre ce que l'intégration a trouvé : appareils, ceux non
+5. Le bouton **Tester la connexion** montre ce que l'intégration a trouvé : appareils, ceux non
    pris en charge, télécommandes IR, rythme de lecture et appels d'API du jour.
 
 Autres réglages :
