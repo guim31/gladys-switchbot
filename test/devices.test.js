@@ -1,240 +1,233 @@
+// -----------------------------------------------------------------------------
+// Device kinds: what each documented status becomes in Gladys, and what each
+// Gladys command becomes for the SwitchBot API. The traps are pinned here:
+// an opening sensor reads 0 when OPEN, a SwitchBot curtain counts 0 = open,
+// a Blind Tilt is open at 50, the current is in amperes, colour temperatures
+// in mireds.
+// -----------------------------------------------------------------------------
+
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import {
-  DEVICE_FEATURE_CATEGORIES,
-  DEVICE_FEATURE_TYPES,
-  DEVICE_POLL_FREQUENCIES,
-  DEVICE_TRANSPORTS,
-} from '@gladysassistant/integration-sdk';
-import { createFakeGladys } from '@gladysassistant/integration-sdk/testing';
-import {
-  DEVICE_BLUEPRINTS,
-  buildDiscoveredDevices,
-  buildTransportEntries,
-  createPoller,
-  findBlueprintByDevice,
-  identifyDevice,
-} from '../src/devices/index.js';
-import { simulateLanSession } from '../src/devices/plug.js';
 import { normalizeConfig } from '../src/config.js';
+import { entriesOf, kindOf, SUPPORTED_TYPES } from '../src/devices/index.js';
+import { OPENING_SENSOR_STATE, LOCK_STATE, VACUUM_CLEANER_STATE } from '../src/devices/features.js';
+import { irCommand } from '../src/devices/remote.js';
+import { DEVICE_LIST, STATUSES } from './helpers/fakeSwitchBot.js';
 
-const gladys = createFakeGladys();
-const config = normalizeConfig();
-
-test('every blueprint exposes the required shape', () => {
-  for (const bp of DEVICE_BLUEPRINTS) {
-    assert.equal(typeof bp.key, 'string', 'key must be a string');
-    assert.equal(typeof bp.deviceExternalId, 'function', 'deviceExternalId must be a function');
-    assert.equal(typeof bp.buildDevice, 'function', 'buildDevice must be a function');
-  }
-});
-
-test('buildDiscoveredDevices returns one payload per blueprint', () => {
-  const devices = buildDiscoveredDevices(gladys, config);
-  assert.equal(devices.length, DEVICE_BLUEPRINTS.length);
-  for (const device of devices) {
-    assert.equal(typeof device.name, 'string');
-    assert.ok(device.external_id, 'each device has an external_id');
-    assert.ok(Array.isArray(device.features) && device.features.length > 0);
-  }
-});
-
-test('Gladys accepts the discovery payload', async () => {
-  // The SDK fake checks the payload like the host API does: external_id
-  // prefix, known category/type/unit, poll_frequency... A refusal is a 400
-  // for the WHOLE list, so no device would show up in the Discovery tab.
-  const fresh = createFakeGladys();
-  await fresh.publishDiscoveredDevices(buildDiscoveredDevices(fresh, config));
-  assert.equal(fresh.fake.discoveredDevices.length, DEVICE_BLUEPRINTS.length);
-});
-
-test('Gladys polls exactly the devices that implement onPoll', () => {
-  const frequencies = Object.values(DEVICE_POLL_FREQUENCIES);
-  for (const bp of DEVICE_BLUEPRINTS) {
-    const device = bp.buildDevice(gladys, config);
-    if (typeof bp.onPoll === 'function') {
-      assert.equal(device.should_poll, true, `${bp.key}: without should_poll, never polled`);
-      assert.ok(frequencies.includes(device.poll_frequency), `${bp.key}: invalid poll_frequency`);
-    } else {
-      assert.notEqual(device.should_poll, true, `${bp.key}: polled for nothing`);
-    }
-  }
-});
-
-test('the poller reads a device at the refresh interval of the config', async (t) => {
-  t.mock.timers.enable({ apis: ['Date'] });
-  const fresh = createFakeGladys();
-  const pollDevice = createPoller();
-  const plug = {
-    external_id: DEVICE_BLUEPRINTS.find((bp) => bp.key === 'plug').deviceExternalId(fresh),
-  };
-  const everyFiveMinutes = normalizeConfig({ poll_frequency: 300 });
-
-  assert.equal(await pollDevice(fresh, plug, everyFiveMinutes), true, 'the first poll reads');
-  for (let minute = 1; minute < 5; minute += 1) {
-    t.mock.timers.tick(DEVICE_POLL_FREQUENCIES.EVERY_MINUTES);
-    assert.equal(
-      await pollDevice(fresh, plug, everyFiveMinutes),
-      false,
-      `skipped at ${minute} min`,
-    );
-  }
-  // Gladys' tick may land a little early: the read is still due.
-  t.mock.timers.tick(DEVICE_POLL_FREQUENCIES.EVERY_MINUTES - 50);
-  assert.equal(await pollDevice(fresh, plug, everyFiveMinutes), true, 'read again at 5 min');
-});
-
-test('the poller retries a failed read at the next poll', async (t) => {
-  t.mock.timers.enable({ apis: ['Date'] });
-  const pollDevice = createPoller();
-  const station = {
-    external_id: DEVICE_BLUEPRINTS.find((bp) => bp.key === 'weather-station').deviceExternalId(
-      gladys,
-    ),
-  };
-  t.mock.method(globalThis, 'fetch', async () => {
-    throw new Error('network down');
+const raw = (id) => DEVICE_LIST.body.deviceList.find((device) => device.deviceId === id);
+const statesOf = (id, status = STATUSES[id]) => kindOf(raw(id).deviceType).states(status, raw(id));
+const commandOf = (id, key, value, extra = {}) =>
+  kindOf(raw(id).deviceType).command({
+    key,
+    value,
+    device: raw(id),
+    status: STATUSES[id],
+    config: normalizeConfig({ lock_control: true }),
+    ...extra,
   });
-  await assert.rejects(pollDevice(gladys, station, config), /network down/);
 
-  globalThis.fetch.mock.mockImplementation(async () => ({
-    ok: true,
-    json: async () => ({ current: { temperature_2m: 21.4, relative_humidity_2m: 55 } }),
-  }));
-  t.mock.timers.tick(DEVICE_POLL_FREQUENCIES.EVERY_MINUTES);
-  assert.equal(await pollDevice(gladys, station, config), true, 'not delayed by the failure');
-  assert.equal(gladys.fake.lastState(`${station.external_id}:temperature`), 21.4);
+test('the catalog keeps the supported devices, and the remotes only on demand', () => {
+  const without = entriesOf(DEVICE_LIST.body, normalizeConfig());
+  assert.equal(without.length, 26);
+  assert.ok(!without.some((entry) => ['Hub Mini', 'Indoor Cam'].includes(entry.raw.deviceType)));
+  assert.equal(without.filter((entry) => entry.remote).length, 0);
+  const withRemotes = entriesOf(DEVICE_LIST.body, normalizeConfig({ ir_remotes: true }));
+  assert.equal(withRemotes.filter((entry) => entry.remote).length, 3);
+  // No type is claimed by two kinds.
+  assert.equal(new Set(SUPPORTED_TYPES).size, SUPPORTED_TYPES.length);
 });
 
-test('the poller ignores a device that has nothing to poll', async () => {
-  const pollDevice = createPoller();
-  const switchId = DEVICE_BLUEPRINTS.find((bp) => bp.key === 'switch').deviceExternalId(gladys);
-  assert.equal(await pollDevice(gladys, { external_id: switchId }, config), false);
-  assert.equal(await pollDevice(gladys, { external_id: 'does-not-exist' }, config), false);
+test('a contact sensor reads 0 when open, 1 when closed, and left open is open', () => {
+  assert.equal(OPENING_SENSOR_STATE.OPEN, 0);
+  assert.equal(OPENING_SENSOR_STATE.CLOSE, 1);
+  const id = 'F00000000010';
+  assert.equal(statesOf(id).contact, 1); // fixture: "close"
+  assert.equal(statesOf(id, { ...STATUSES[id], openState: 'open' }).contact, 0);
+  assert.equal(statesOf(id, { ...STATUSES[id], openState: 'timeOutNotClose' }).contact, 0);
+  assert.equal(statesOf(id, { ...STATUSES[id], openState: 'weird' }).contact, undefined);
+  assert.equal(statesOf(id).motion, 0);
+  assert.equal(statesOf(id).battery, 60);
 });
 
-test('an idle plug publishes its 0 W once, then only as a heartbeat', async (t) => {
-  t.mock.timers.enable({ apis: ['Date'] });
-  const fresh = createFakeGladys();
-  const plug = DEVICE_BLUEPRINTS.find((bp) => bp.key === 'plug');
-  await plug.onPoll(fresh, config);
-  await plug.onPoll(fresh, config);
-  assert.equal(fresh.fake.states.length, 1, 'an unchanged value is not sent again');
-  t.mock.timers.tick(30 * 60 * 1000);
-  await plug.onPoll(fresh, config);
-  assert.equal(fresh.fake.states.length, 2, 're-sent after 30 minutes');
-});
-
-test('device external_ids are unique across the catalog', () => {
-  const devices = buildDiscoveredDevices(gladys, config);
-  const ids = devices.map((d) => d.external_id);
-  assert.equal(new Set(ids).size, ids.length, 'no two devices may share an external_id');
-});
-
-test('findBlueprintByDevice routes an external_id back to its owner blueprint', () => {
-  for (const bp of DEVICE_BLUEPRINTS) {
-    const external_id = bp.deviceExternalId(gladys);
-    const found = findBlueprintByDevice(gladys, { external_id });
-    assert.equal(found, bp);
-  }
-});
-
-test('findBlueprintByDevice returns undefined for an unknown device', () => {
-  const found = findBlueprintByDevice(gladys, { external_id: 'does-not-exist' });
-  assert.equal(found, undefined);
-});
-
-test('manifest action keys are unique across blueprints', () => {
-  const keys = DEVICE_BLUEPRINTS.flatMap((bp) => Object.keys(bp.actions ?? {}));
-  assert.equal(new Set(keys).size, keys.length, 'no two blueprints may register the same action');
-});
-
-test('the camera declares a camera/image feature', () => {
-  const cameraBlueprint = DEVICE_BLUEPRINTS.find((bp) => bp.key === 'camera');
-  const device = cameraBlueprint.buildDevice(gladys, config);
-  const imageFeature = device.features.find((f) => f.category === DEVICE_FEATURE_CATEGORIES.CAMERA);
-  assert.ok(imageFeature, 'the camera must carry a camera feature');
-  assert.equal(imageFeature.type, DEVICE_FEATURE_TYPES.CAMERA.IMAGE);
-  assert.equal(imageFeature.read_only, true);
-});
-
-test('onGetImage resolves a base64 JPEG under the 150 KB limit', async () => {
-  const cameraBlueprint = DEVICE_BLUEPRINTS.find((bp) => bp.key === 'camera');
-  const image = await cameraBlueprint.onGetImage(gladys, {
-    device: { external_id: cameraBlueprint.deviceExternalId(gladys) },
-    config,
-  });
-  assert.match(image, /^image\/jpg;base64,/);
-  assert.ok(image.length <= 150 * 1024, 'the image must stay under 150 KB');
-});
-
-test('buildTransportEntries reports one valid entry per dual-channel device', () => {
-  const entries = buildTransportEntries(gladys, config);
-  assert.ok(entries.length > 0, 'the demo plug reports its transport');
-  const validValues = Object.values(DEVICE_TRANSPORTS);
-  for (const entry of entries) {
-    assert.ok(entry.external_id, 'each entry targets a device external_id');
-    assert.ok(validValues.includes(entry.transport), `invalid transport: ${entry.transport}`);
-  }
-});
-
-test('the demo plug honors the GLADYS_PREFER_LOCAL preference', () => {
-  const local = buildTransportEntries(gladys, normalizeConfig({ GLADYS_PREFER_LOCAL: true }));
-  const cloud = buildTransportEntries(gladys, normalizeConfig({ GLADYS_PREFER_LOCAL: false }));
-  const plugId = DEVICE_BLUEPRINTS.find((bp) => bp.key === 'plug').deviceExternalId(gladys);
-  assert.equal(local.find((e) => e.external_id === plugId).transport, DEVICE_TRANSPORTS.LOCAL);
-  assert.equal(cloud.find((e) => e.external_id === plugId).transport, DEVICE_TRANSPORTS.CLOUD);
-});
-
-test('nominal transport entries never carry a leftover degraded flag', () => {
-  const entries = buildTransportEntries(gladys, config);
-  for (const entry of entries) {
-    assert.equal(entry.degraded, undefined, 'nominal entries must clear the degraded state');
-  }
-});
-
-test('the plug reports a degraded cloud fallback when the LAN session is refused', () => {
-  const plugId = DEVICE_BLUEPRINTS.find((bp) => bp.key === 'plug').deviceExternalId(gladys);
-  simulateLanSession(false);
-  try {
-    const entries = buildTransportEntries(gladys, normalizeConfig({ GLADYS_PREFER_LOCAL: true }));
-    const entry = entries.find((e) => e.external_id === plugId);
-    assert.equal(entry.transport, DEVICE_TRANSPORTS.CLOUD, 'falls back to cloud');
-    assert.equal(entry.degraded, true, 'the fallback is flagged degraded');
-    assert.ok(entry.message.en, 'the reason carries at least the mandatory `en` text');
-    assert.ok(entry.message.en.length <= 200, 'tooltip messages are capped at 200 characters');
-  } finally {
-    simulateLanSession(true);
-  }
-});
-
-test('identifyDevice signals a device that implements identify', async () => {
-  const lightId = DEVICE_BLUEPRINTS.find((bp) => bp.key === 'light').deviceExternalId(gladys);
-  const message = await identifyDevice(gladys, lightId, config);
-  assert.match(message.en, /signalling/);
-  assert.ok(message.fr, 'the message is multi-language');
-});
-
-test('identifyDevice explains when the device has no way to signal itself', async () => {
-  const weatherId = DEVICE_BLUEPRINTS.find((bp) => bp.key === 'weather-station').deviceExternalId(
-    gladys,
+test('a lock reads its state and its door, both spellings', () => {
+  const pro = 'F0000000000B';
+  assert.deepEqual(statesOf(pro), { lock: 0, 'lock-state': 0, door: 0, battery: 100 });
+  const closed = statesOf(pro, { ...STATUSES[pro], lockState: 'LOCKED', doorState: 'closed' });
+  assert.equal(closed['lock-state'], LOCK_STATE.LOCKED);
+  assert.equal(closed.door, OPENING_SENSOR_STATE.CLOSE);
+  assert.equal(
+    statesOf(pro, { ...STATUSES[pro], lockState: 'jammed' })['lock-state'],
+    LOCK_STATE.ERROR,
   );
-  const message = await identifyDevice(gladys, weatherId, config);
-  assert.match(message.en, /no way to signal/);
+  assert.equal(statesOf(pro, { ...STATUSES[pro], lockState: 'jammed' }).lock, undefined);
+  assert.equal(
+    statesOf(pro, { ...STATUSES[pro], lockState: 'locking' })['lock-state'],
+    LOCK_STATE.ACTIVITY,
+  );
+  // The Lock Lite has no door sensor.
+  assert.equal(statesOf('F0000000000C').door, undefined);
+  assert.equal(statesOf('F0000000000C')['lock-state'], LOCK_STATE.LOCKED);
 });
 
-test('the test_weather action returns a multi-language message', async () => {
-  const realFetch = globalThis.fetch;
-  globalThis.fetch = async () => ({
-    ok: true,
-    json: async () => ({ current: { temperature_2m: 21.4, relative_humidity_2m: 55 } }),
+test('a lock is controllable only with the option on', () => {
+  const pro = 'F0000000000B';
+  const kind = kindOf('Smart Lock Pro');
+  const keys = (config) =>
+    kind.features(raw(pro), { config: normalizeConfig(config) }).map((f) => f.key);
+  assert.deepEqual(keys({}), ['lock-state', 'battery', 'door']);
+  assert.deepEqual(keys({ lock_control: true }), ['lock', 'lock-state', 'battery', 'door']);
+  assert.equal(commandOf(pro, 'lock', 1, { config: normalizeConfig() }), null);
+  assert.deepEqual(commandOf(pro, 'lock', 1).commands, [{ command: 'lock' }]);
+  assert.deepEqual(commandOf(pro, 'lock', 0).commands, [{ command: 'unlock' }]);
+});
+
+test('covers: position 100 = open in Gladys, inverted for curtains and roller shades', () => {
+  assert.equal(statesOf('F00000000008').position, 100); // slidePosition 0 = open
+  assert.equal(statesOf('F00000000009').position, 75); // 25 closed
+  assert.equal(statesOf('F0000000000A').position, 80); // tilt 60: 50 is fully open
+  assert.equal(statesOf('F0000000000A', { slidePosition: 0 }).position, 0);
+  assert.equal(statesOf('F0000000000A', { slidePosition: 100 }).position, 0);
+  assert.equal(statesOf('F00000000008').battery, 44);
+  assert.equal(statesOf('F0000000000A').battery, undefined);
+});
+
+test('covers: commands per model', () => {
+  assert.deepEqual(commandOf('F00000000008', 'position', 30).commands, [
+    { command: 'setPosition', parameter: '0,ff,70' },
+  ]);
+  assert.deepEqual(commandOf('F00000000009', 'position', 30).commands, [
+    { command: 'setPosition', parameter: 70 },
+  ]);
+  assert.deepEqual(commandOf('F0000000000A', 'position', 31).commands, [
+    { command: 'setPosition', parameter: 'up;32' },
+  ]);
+  assert.deepEqual(commandOf('F00000000008', 'state', 1).commands, [{ command: 'turnOn' }]);
+  assert.deepEqual(commandOf('F00000000008', 'state', -1).commands, [{ command: 'turnOff' }]);
+  assert.deepEqual(commandOf('F00000000008', 'state', 0).commands, [{ command: 'pause' }]);
+  assert.deepEqual(commandOf('F00000000009', 'state', -1).commands, [
+    { command: 'setPosition', parameter: 100 },
+  ]);
+  assert.throws(() => commandOf('F00000000009', 'state', 0), /cannot stop/);
+  assert.deepEqual(commandOf('F0000000000A', 'state', 1).commands, [{ command: 'fullyOpen' }]);
+  assert.deepEqual(commandOf('F0000000000A', 'state', -1).commands, [{ command: 'closeUp' }]);
+  assert.equal(commandOf('F00000000008', 'state', 7), null);
+});
+
+test('plugs: amperes, watts, kilowatt-hours of the day', () => {
+  assert.deepEqual(statesOf('F00000000005'), {
+    power: 1,
+    voltage: 236.8,
+    current: 0.02,
+    'power-usage': 10,
+    'energy-today': 0,
   });
-  try {
-    const weatherStation = DEVICE_BLUEPRINTS.find((bp) => bp.key === 'weather-station');
-    const message = await weatherStation.actions.test_weather(gladys, { fields: {}, config });
-    assert.match(message.en, /21\.4/);
-    assert.match(message.fr, /21\.4/);
-  } finally {
-    globalThis.fetch = realFetch;
-  }
+  assert.equal(
+    statesOf('F00000000005', { ...STATUSES.F00000000005, usedElectricity: 1500 })['energy-today'],
+    0.025,
+  );
+  assert.deepEqual(statesOf('F00000000006'), {
+    power: 1,
+    voltage: 120.2,
+    current: 0.083,
+    'power-usage': 10,
+  });
+  assert.deepEqual(statesOf('F00000000007'), { power: 0 });
+  assert.deepEqual(commandOf('F00000000007', 'power', 1), {
+    commands: [{ command: 'turnOn' }],
+    expected: { power: 1 },
+  });
+});
+
+test('bot: a press in press mode, on/off in switch mode', () => {
+  assert.equal(statesOf('F00000000003').power, 0);
+  assert.deepEqual(commandOf('F00000000003', 'power', 1), {
+    commands: [{ command: 'press' }],
+    expected: { power: 0 },
+  });
+  assert.equal(statesOf('F00000000004').power, 1);
+  assert.deepEqual(commandOf('F00000000004', 'power', 0).commands, [{ command: 'turnOff' }]);
+});
+
+test('lights: RGB as an integer, white temperature in mireds', () => {
+  assert.deepEqual(statesOf('F00000000013'), {
+    power: 1,
+    brightness: 80,
+    color: 0xff8000,
+    'color-temperature': 250,
+  });
+  assert.equal(statesOf('F00000000014').color, 0x0000ff);
+  assert.equal(statesOf('F00000000014')['color-temperature'], undefined);
+  assert.equal(statesOf('F00000000015')['color-temperature'], 370);
+  assert.equal(statesOf('F00000000015').color, undefined);
+  assert.deepEqual(commandOf('F00000000013', 'color', 0xff8000).commands, [
+    { command: 'setColor', parameter: '255:128:0' },
+  ]);
+  assert.deepEqual(commandOf('F00000000013', 'color-temperature', 250).commands, [
+    { command: 'setColorTemperature', parameter: 4000 },
+  ]);
+  assert.deepEqual(commandOf('F00000000013', 'brightness', 0).commands, [{ command: 'turnOff' }]);
+  assert.deepEqual(commandOf('F00000000013', 'brightness', 55).commands, [
+    { command: 'setBrightness', parameter: 55 },
+  ]);
+  assert.equal(commandOf('F00000000015', 'color', 0xff0000), null);
+});
+
+test('meters and hubs', () => {
+  assert.deepEqual(statesOf('F0000000000D'), {
+    temperature: 21.8,
+    humidity: 32,
+    co2: undefined,
+    'light-level': undefined,
+    motion: undefined,
+    battery: 100,
+  });
+  assert.equal(statesOf('F0000000000E').temperature, -3.4);
+  assert.equal(statesOf('F0000000000F').co2, 1203);
+  assert.equal(statesOf('F00000000001')['light-level'], 1);
+  assert.equal(statesOf('F0000000001B').motion, 0);
+});
+
+test('motion, leak, humidifier, purifier, fan, vacuums', () => {
+  assert.deepEqual(statesOf('F00000000011'), { motion: 0, battery: 20 });
+  assert.deepEqual(statesOf('F00000000012'), { leak: 0, battery: 90 });
+  assert.equal(statesOf('F00000000012', { status: 1 }).leak, 1);
+  assert.equal(statesOf('F00000000016')['water-tank'], 0); // lackWater: true
+  assert.deepEqual(statesOf('F00000000017'), { power: 1, mode: { text: 'auto' } });
+  assert.deepEqual(commandOf('F00000000017', 'mode', 'sleep').commands, [
+    { command: 'setMode', parameter: { mode: 3 } },
+  ]);
+  assert.equal(commandOf('F00000000017', 'mode', 'turbo'), null);
+  assert.equal(statesOf('F0000000001A')['fan-speed'], 3);
+  assert.deepEqual(
+    commandOf('F0000000001A', 'fan-speed', 40, { status: { mode: 'natural' } }).commands,
+    [
+      { command: 'setWindMode', parameter: 'direct' },
+      { command: 'setWindSpeed', parameter: 40 },
+    ],
+  );
+  assert.deepEqual(statesOf('F00000000018'), {
+    state: VACUUM_CLEANER_STATE.CHARGING,
+    run: 0,
+    battery: 85,
+  });
+  assert.deepEqual(commandOf('F00000000018', 'run', 1).commands, [{ command: 'start' }]);
+  assert.deepEqual(commandOf('F00000000018', 'dock', 1).commands, [{ command: 'dock' }]);
+  assert.equal(statesOf('F00000000019').state, VACUUM_CLEANER_STATE.RUNNING);
+  // The S10 starts with a cleaning program: no start/stop feature.
+  assert.equal(commandOf('F00000000019', 'run', 1), null);
+});
+
+test('IR commands: standard ones, custom buttons, the "Others" remotes', () => {
+  assert.deepEqual(irCommand({ remoteType: 'TV' }, 'volumeAdd'), {
+    command: 'volumeAdd',
+    parameter: 'default',
+    commandType: 'command',
+  });
+  assert.deepEqual(irCommand({ remoteType: 'Air Conditioner' }, 'setAll', ' 26,1,3,on '), {
+    command: 'setAll',
+    parameter: '26,1,3,on',
+    commandType: 'command',
+  });
+  assert.equal(irCommand({ remoteType: 'TV' }, 'Netflix').commandType, 'customize');
+  assert.equal(irCommand({ remoteType: 'Others' }, 'turnOn').commandType, 'customize');
 });

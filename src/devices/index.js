@@ -1,151 +1,184 @@
 // -----------------------------------------------------------------------------
-// Device registry.
+// Device catalog: which SwitchBot `deviceType` maps to which kind, and how a
+// SwitchBot device becomes a Gladys device.
 //
-// Add or remove device types here. Each device lives in its own file and
-// exposes the same shape:
-//   - key                        : short identifier (used in logs)
-//   - deviceExternalId(gladys)   : the device external_id (for dispatch)
-//   - buildDevice(gladys, config): the discovery payload sent to Gladys
-//   - onPoll(gladys, config)      (optional): periodic read, for a device
-//     published with `should_poll: true` (see createPoller below)
-//   - onSetValue(gladys, {...})   (optional): run a user command
-//   - onGetImage(gladys, {...})   (optional): fresh camera capture, resolved
-//     as an `image/jpg;base64,...` string (cameras only)
-//   - startPush(gladys, config)   (optional): subscribe to a real-time stream
-//   - transport(gladys, config)   (optional): effective transport of the
-//     device, shown as a badge in Gladys. Either a plain string ('local' |
-//     'cloud' | 'unreachable') or an object `{ transport, degraded, message }`
-//     to also flag the "works, but not nominal" state (orange dot + tooltip)
-//   - identify(gladys, {...})     (optional): make the physical device signal
-//     itself (blink...), used by the `identify` manifest action
-//   - actions                     (optional): manifest action handlers, keyed
-//     by the action `key` declared in gladys-assistant-integration.json
-//   - sceneTriggers               (optional): keys of the manifest
-//     `scene_triggers` the device fires with `gladys.publishSceneEvent`
+// A kind (one file per family in this folder) exposes:
+//   - kind, types: its name and the `deviceType` values it handles;
+//   - webhook: whether SwitchBot pushes its changes by webhook;
+//   - features(device, { config }): the feature specs (features.js);
+//   - states(status, device): feature key → number | { text } | undefined;
+//   - command({ key, value, device, status, config }) (optional): the API
+//     commands of a Gladys command, and the states expected once done
+//     (`{ commands, expected }`), or null when the feature is not controllable.
+//
+// External ids are built from the SwitchBot `deviceId` (the device MAC, or
+// the remote id), never from a name: `ext:<selector>:device:<deviceId>` for a
+// physical device, `ext:<selector>:remote:<deviceId>` for an IR remote, and
+// `:<feature key>` for the features. They are forever.
 // -----------------------------------------------------------------------------
 
 import { DEVICE_POLL_FREQUENCIES } from '@gladysassistant/integration-sdk';
-import { weatherStation } from './weatherStation.js';
-import { switchDevice } from './switchDevice.js';
+import { NAMES, OPTION_LABELS } from '../i18n.js';
+import { bot } from './bot.js';
+import { fan, humidifier, purifier } from './climate.js';
+import { contact } from './contact.js';
+import { cover } from './cover.js';
+import { leak } from './leak.js';
 import { light } from './light.js';
+import { lock } from './lock.js';
+import { meter } from './meter.js';
+import { motion } from './motion.js';
 import { plug } from './plug.js';
-import { motionSensor } from './motionSensor.js';
-import { camera } from './camera.js';
+import { remote } from './remote.js';
+import { vacuum } from './vacuum.js';
 
-export const DEVICE_BLUEPRINTS = [weatherStation, switchDevice, light, plug, motionSensor, camera];
+export const KINDS = [
+  bot,
+  plug,
+  cover,
+  lock,
+  meter,
+  contact,
+  motion,
+  leak,
+  light,
+  humidifier,
+  purifier,
+  fan,
+  vacuum,
+];
 
-// Every scene trigger key the devices fire: each one must be declared in the
-// manifest `scene_triggers` field, or the core answers 404 (see the tests).
-export const SCENE_TRIGGER_KEYS = DEVICE_BLUEPRINTS.flatMap((bp) => bp.sceneTriggers ?? []);
+export const REMOTE_KIND = remote;
+
+export const ID_TYPES = { DEVICE: 'device', REMOTE: 'remote' };
+
+const KIND_BY_TYPE = new Map(KINDS.flatMap((kind) => kind.types.map((type) => [type, kind])));
+
+/** The kind of a physical device type, or undefined when not supported. */
+export const kindOf = (deviceType) => KIND_BY_TYPE.get(deviceType);
+
+/** Every supported `deviceType`. */
+export const SUPPORTED_TYPES = [...KIND_BY_TYPE.keys()];
 
 /**
- * Build the discovery payload for Gladys (all devices).
+ * One SwitchBot device or remote, as the catalog knows it.
+ * @typedef {object} Entry
+ * @property {string} id SwitchBot deviceId
+ * @property {string} name name given in the SwitchBot app
+ * @property {boolean} remote an IR remote
+ * @property {object} kind
+ * @property {object} raw the device list entry
  */
-export function buildDiscoveredDevices(gladys, config) {
-  return DEVICE_BLUEPRINTS.map((bp) => bp.buildDevice(gladys, config));
-}
 
 /**
- * Find the blueprint that owns a given device, from its external_id
- * (used to route onPoll / onSetValue / onGetImage to the right device).
+ * The entries of a device list, supported devices and (when asked) remotes.
+ * @param {{ deviceList: object[], infraredRemoteList: object[] }} list
+ * @param {{ ir_remotes: boolean }} config
  */
-export function findBlueprintByDevice(gladys, device) {
-  return DEVICE_BLUEPRINTS.find((bp) => bp.deviceExternalId(gladys) === device.external_id);
-}
-
-// Gladys' poll ticks drift by a few milliseconds: a read due within the next
-// half-minute runs now, so a 300 s interval does not slip to 360 s.
-const POLL_TOLERANCE_MS = DEVICE_POLL_FREQUENCIES.EVERY_MINUTES / 2;
-
-/**
- * Create the `onPoll` dispatcher: route the poll to the owner blueprint, at
- * the refresh interval the user chose (`poll_frequency` config, in seconds).
- *
- * Gladys polls a device at a fixed pace, read once when the device is
- * created and at most once a minute (DEVICE_POLL_FREQUENCIES). The polled
- * devices declare that minute, and the slower interval of the config is
- * applied here by skipping the polls in between: the user can change it at
- * any time, without re-creating the devices.
- *
- * Resolves `true` when the device was read, `false` when the poll was
- * skipped. A read that throws is retried at the next poll.
- */
-export function createPoller() {
-  const lastReads = new Map();
-  return async function pollDevice(gladys, device, config) {
-    const blueprint = findBlueprintByDevice(gladys, device);
-    if (!blueprint || typeof blueprint.onPoll !== 'function') {
-      return false;
+export function entriesOf(list, config) {
+  const entries = [];
+  for (const raw of list.deviceList) {
+    const kind = kindOf(raw.deviceType);
+    if (kind && typeof raw.deviceId === 'string' && raw.deviceId !== '') {
+      entries.push({ id: raw.deviceId, name: displayName(raw), remote: false, kind, raw });
     }
-    const now = Date.now();
-    const lastRead = lastReads.get(device.external_id);
-    if (
-      lastRead !== undefined &&
-      now - lastRead < config.poll_frequency * 1000 - POLL_TOLERANCE_MS
-    ) {
-      return false;
-    }
-    await blueprint.onPoll(gladys, config);
-    lastReads.set(device.external_id, now);
-    return true;
-  };
-}
-
-/**
- * Build the `publishTransports` payload: one entry per blueprint that reports
- * its effective transport (dual-channel devices). Devices with a single,
- * obvious channel simply do not implement `transport()`.
- *
- * A blueprint returns either a plain transport string, or an object
- * `{ transport, degraded, message }` when it needs to flag a degraded state
- * (SDK v0.7+): "it works, but not in the nominal mode" — e.g. local preferred
- * but refused, falling back to cloud. Entries WITHOUT `degraded` clear a
- * previously published degraded state, so nominal blueprints have nothing
- * special to do.
- */
-export function buildTransportEntries(gladys, config) {
-  return DEVICE_BLUEPRINTS.filter((bp) => typeof bp.transport === 'function').map((bp) => {
-    const reported = bp.transport(gladys, config);
-    const entry = typeof reported === 'string' ? { transport: reported } : reported;
-    return { external_id: bp.deviceExternalId(gladys), ...entry };
-  });
-}
-
-/**
- * Make a device signal itself (blink...) so the user can spot it among
- * identical hardware. Resolves `false` when the device has no way to.
- *
- * Written once, reached from three surfaces: the `identify` manifest action
- * (Configuration screen), the `identify_device` scene action (src/scenes.js)
- * and the button of the `demo_status` dashboard widget (src/widgets.js).
- */
-export async function signalDevice(gladys, externalId, config) {
-  const blueprint = findBlueprintByDevice(gladys, { external_id: externalId });
-  if (!blueprint || typeof blueprint.identify !== 'function') {
-    return false;
   }
-  await blueprint.identify(gladys, { config });
-  return true;
+  if (config.ir_remotes) {
+    for (const raw of list.infraredRemoteList) {
+      if (typeof raw.deviceId === 'string' && raw.deviceId !== '') {
+        entries.push({ id: raw.deviceId, name: displayName(raw), remote: true, kind: remote, raw });
+      }
+    }
+  }
+  return entries;
 }
 
+const displayName = (raw) =>
+  typeof raw.deviceName === 'string' && raw.deviceName.trim() !== ''
+    ? raw.deviceName.trim()
+    : raw.deviceId;
+
+/** The external ids of one entry. */
+export const entryIds = (gladys, entry) =>
+  gladys.externalIds(entry.remote ? ID_TYPES.REMOTE : ID_TYPES.DEVICE, entry.id);
+
+/** The feature specs of one entry. */
+export const specsOf = (entry, config) => entry.kind.features(entry.raw, { config });
+
 /**
- * Handler of the `identify` manifest action: make the chosen device signal
- * itself, and say so under the button.
- *
- * `externalId` comes from the action's dynamic select (`"source": "devices"`
- * in the manifest): the Configuration screen populates the options with the
- * integration's OWN created devices (label = device name, value =
- * external_id), so the user never copies an identifier by hand.
+ * The Gladys device of one entry (discovery payload).
+ * @param {object} gladys
+ * @param {Entry} entry
+ * @param {object} config normalized config
  */
-export async function identifyDevice(gladys, externalId, config) {
-  if (!(await signalDevice(gladys, externalId, config))) {
-    return {
-      en: 'This device has no way to signal itself.',
-      fr: 'Cet appareil ne peut pas se signaler.',
+export function buildDevice(gladys, entry, config) {
+  const ids = entryIds(gladys, entry);
+  const names = NAMES[config.language];
+  const options = OPTION_LABELS[config.language];
+  const features = specsOf(entry, config).map((spec) => {
+    const { key, nameKey, optionsKey, ...rest } = spec;
+    const feature = {
+      name: names[nameKey],
+      external_id: ids.feature(key),
+      ...rest,
+      keep_history: rest.category !== 'text',
     };
+    if (optionsKey) {
+      feature.supported_options = Object.entries(options[optionsKey]).map(
+        ([value, label], index) => ({ value, label, sort_order: index }),
+      );
+    }
+    return feature;
+  });
+  const params = [
+    {
+      name: 'SWITCHBOT_TYPE',
+      value: String(entry.remote ? entry.raw.remoteType : entry.raw.deviceType),
+    },
+  ];
+  const device = { name: entry.name, external_id: ids.device, features, params };
+  if (entry.remote) {
+    // A remote has no state to read: nothing to poll.
+    device.should_poll = false;
+  } else {
+    // The container polls by itself (src/poller.js): the core's onPoll, once
+    // a minute, is only the fallback, skipped while the timer runs.
+    device.should_poll = true;
+    device.poll_frequency = DEVICE_POLL_FREQUENCIES.EVERY_MINUTES;
   }
-  return {
-    en: 'Look around: the device is signalling itself.',
-    fr: "Regardez autour de vous : l'appareil se signale.",
-  };
+  return device;
+}
+
+/**
+ * The states of one entry from its status, as `publishChangedStates` takes
+ * them. Values the status does not give are left out.
+ */
+export function statesOf(gladys, entry, status, config) {
+  const ids = entryIds(gladys, entry);
+  const known = new Set(specsOf(entry, config).map((spec) => spec.key));
+  return toStates(ids, entry.kind.states(status, entry.raw), known);
+}
+
+/** `{ key: value }` → publishChangedStates entries, for the keys in `known`. */
+export function toStates(ids, values, known) {
+  const states = [];
+  for (const [key, value] of Object.entries(values)) {
+    if (!known.has(key) || value === undefined || value === null) {
+      continue;
+    }
+    if (typeof value === 'object') {
+      if (typeof value.text === 'string' && value.text !== '') {
+        states.push({ device_feature_external_id: ids.feature(key), text: value.text });
+      }
+    } else if (Number.isFinite(value)) {
+      states.push({ device_feature_external_id: ids.feature(key), state: value });
+    }
+  }
+  return states;
+}
+
+/** The feature key of a feature external id of an entry, or undefined. */
+export function featureKeyOf(gladys, entry, featureExternalId) {
+  const prefix = `${entryIds(gladys, entry).device}:`;
+  return featureExternalId?.startsWith(prefix) ? featureExternalId.slice(prefix.length) : undefined;
 }

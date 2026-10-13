@@ -1,8 +1,8 @@
 {
-  "name": "gladys-integration-template-js",
+  "name": "gladys-switchbot",
   "version": "1.0.0",
   "private": true,
-  "description": "Official starter template to build an external integration for Gladys Assistant with the JavaScript SDK.",
+  "description": "Gladys Assistant integration for SwitchBot devices, through the official SwitchBot cloud API.",
   "type": "module",
   "main": "index.js",
   "scripts": {

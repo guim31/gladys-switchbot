@@ -1,0 +1,258 @@
+{
+  "_source": "GET /v1.1/devices/{id}/status bodies, from the Home Assistant switchbot_cloud test fixtures (Apache-2.0), the py-switchbot-api fixtures (MIT) and the SwitchBot API documentation. Device ids are invented.",
+  "F00000000001": {
+    "version": "V2.3-1.4",
+    "temperature": 17.8,
+    "lightLevel": 1,
+    "humidity": 52,
+    "deviceId": "F00000000001",
+    "deviceType": "Hub 2",
+    "hubDeviceId": "F00000000001"
+  },
+  "F00000000003": {
+    "deviceId": "F00000000003",
+    "deviceType": "Bot",
+    "power": "ON",
+    "battery": 100,
+    "version": "V6.3",
+    "deviceMode": "pressMode",
+    "hubDeviceId": "F00000000001"
+  },
+  "F00000000004": {
+    "deviceId": "F00000000004",
+    "deviceType": "Bot",
+    "power": "on",
+    "battery": 19,
+    "version": "V6.3",
+    "deviceMode": "switchMode",
+    "hubDeviceId": "F00000000001"
+  },
+  "F00000000005": {
+    "deviceId": "F00000000005",
+    "deviceType": "Plug Mini (EU)",
+    "switchStatus": 1,
+    "voltage": 236.8,
+    "power": 10,
+    "electricCurrent": 20,
+    "usedElectricity": 20,
+    "version": "V3.1-6.3"
+  },
+  "F00000000006": {
+    "deviceId": "F00000000006",
+    "deviceType": "Plug Mini (US)",
+    "power": "ON",
+    "onlineStatus": "online",
+    "hubDeviceId": "000000000000",
+    "voltage": 120.2,
+    "version": "V3.1-6.3",
+    "weight": 10,
+    "electricityOfDay": 10,
+    "electricCurrent": 83
+  },
+  "F00000000007": {
+    "deviceId": "F00000000007",
+    "deviceType": "Plug",
+    "power": "OFF",
+    "version": "V4.2"
+  },
+  "F00000000008": {
+    "version": "V1.2",
+    "calibrate": true,
+    "group": false,
+    "moving": false,
+    "battery": 44,
+    "slidePosition": 0,
+    "deviceId": "F00000000008",
+    "deviceType": "Curtain3",
+    "hubDeviceId": "F00000000001"
+  },
+  "F00000000009": {
+    "deviceId": "F00000000009",
+    "deviceType": "Roller Shade",
+    "hubDeviceId": "F00000000001",
+    "calibrate": false,
+    "moving": false,
+    "battery": 100,
+    "version": "V6.3",
+    "slidePosition": 25
+  },
+  "F0000000000A": {
+    "deviceId": "F0000000000A",
+    "deviceType": "Blind Tilt",
+    "hubDeviceId": "F00000000001",
+    "version": 12,
+    "calibrate": false,
+    "group": false,
+    "moving": false,
+    "direction": "Up",
+    "slidePosition": 60
+  },
+  "F0000000000B": {
+    "deviceId": "F0000000000B",
+    "deviceType": "Smart Lock Pro",
+    "hubDeviceId": "F00000000001",
+    "battery": 100,
+    "version": "V6.3",
+    "lockState": "unlock",
+    "doorState": "open",
+    "calibrate": true
+  },
+  "F0000000000C": {
+    "deviceId": "F0000000000C",
+    "deviceType": "Smart Lock Lite",
+    "hubDeviceId": "F00000000001",
+    "battery": 60,
+    "version": "V6.3",
+    "lockState": "locked",
+    "calibrate": true
+  },
+  "F0000000000D": {
+    "version": "V3.3",
+    "temperature": 21.8,
+    "battery": 100,
+    "humidity": 32,
+    "deviceId": "F0000000000D",
+    "deviceType": "Meter",
+    "hubDeviceId": "F00000000001"
+  },
+  "F0000000000E": {
+    "deviceId": "F0000000000E",
+    "deviceType": "WoIOSensor",
+    "hubDeviceId": "F00000000001",
+    "temperature": -3.4,
+    "battery": 20,
+    "onlineStatus": "online",
+    "version": "V6.3",
+    "humidity": 87
+  },
+  "F0000000000F": {
+    "deviceId": "F0000000000F",
+    "deviceType": "MeterPro(CO2)",
+    "hubDeviceId": "F00000000001",
+    "battery": 100,
+    "version": "V6.3",
+    "temperature": 13,
+    "humidity": 28,
+    "CO2": 1203
+  },
+  "F00000000010": {
+    "version": "V1.7",
+    "battery": 60,
+    "moveDetected": false,
+    "brightness": "bright",
+    "openState": "close",
+    "deviceId": "F00000000010",
+    "deviceType": "Contact Sensor",
+    "hubDeviceId": "F00000000001"
+  },
+  "F00000000011": {
+    "version": "V1.9",
+    "battery": 20,
+    "moveDetected": false,
+    "brightness": "dim",
+    "deviceId": "F00000000011",
+    "deviceType": "Motion Sensor",
+    "hubDeviceId": "F00000000001"
+  },
+  "F00000000012": {
+    "version": "V1.7",
+    "battery": 90,
+    "status": 0,
+    "deviceId": "F00000000012",
+    "deviceType": "Water Detector",
+    "hubDeviceId": "000000000000"
+  },
+  "F00000000013": {
+    "deviceId": "F00000000013",
+    "deviceType": "Color Bulb",
+    "hubDeviceId": "000000000000",
+    "power": "on",
+    "brightness": 80,
+    "color": "255:128:0",
+    "colorTemperature": 4000,
+    "version": "V1.8"
+  },
+  "F00000000014": {
+    "deviceId": "F00000000014",
+    "deviceType": "Strip Light",
+    "hubDeviceId": "000000000000",
+    "power": "off",
+    "brightness": 40,
+    "color": "0:0:255",
+    "onlineStatus": "online",
+    "version": "V1.8"
+  },
+  "F00000000015": {
+    "deviceId": "F00000000015",
+    "deviceType": "Ceiling Light",
+    "hubDeviceId": "000000000000",
+    "power": "on",
+    "brightness": 100,
+    "colorTemperature": 2700,
+    "onlineStatus": "online",
+    "version": "V1.8"
+  },
+  "F00000000016": {
+    "deviceId": "F00000000016",
+    "deviceType": "Humidifier",
+    "nebulizationEfficiency": 1,
+    "humidity": 45,
+    "auto": false,
+    "childLock": true,
+    "sound": true,
+    "power": "on",
+    "onlineStatus": "online",
+    "temperature": 13.5,
+    "lackWater": true
+  },
+  "F00000000017": {
+    "version": "V2.3",
+    "power": "ON",
+    "mode": 2,
+    "deviceId": "F00000000017",
+    "deviceType": "Air Purifier PM2.5",
+    "hubDeviceId": "000000000000"
+  },
+  "F00000000018": {
+    "deviceId": "F00000000018",
+    "deviceType": "Robot Vacuum Cleaner S1",
+    "hubDeviceId": "000000000000",
+    "workingStatus": "Charging",
+    "onlineStatus": "online",
+    "battery": 85
+  },
+  "F00000000019": {
+    "deviceId": "F00000000019",
+    "deviceType": "Robot Vacuum Cleaner S10",
+    "hubDeviceId": "000000000000",
+    "workingStatus": "Clearing",
+    "onlineStatus": "online",
+    "battery": 64,
+    "waterBaseBattery": 100,
+    "taskType": "cleanAll"
+  },
+  "F0000000001A": {
+    "deviceId": "F0000000001A",
+    "deviceType": "Battery Circulator Fan",
+    "hubDeviceId": "000000000000",
+    "mode": "direct",
+    "version": "V6.3",
+    "battery": 22,
+    "power": "on",
+    "nightStatus": "off",
+    "oscillation": "on",
+    "verticalOscillation": "on",
+    "chargingStatus": "charging",
+    "fanSpeed": 3
+  },
+  "F0000000001B": {
+    "version": "V1.3-0.8-0.1",
+    "temperature": 26.5,
+    "lightLevel": 10,
+    "humidity": 55,
+    "moveDetected": false,
+    "deviceId": "F0000000001B",
+    "deviceType": "Hub 3",
+    "hubDeviceId": "F0000000001B"
+  }
+}

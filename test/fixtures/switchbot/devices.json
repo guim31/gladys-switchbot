@@ -1,0 +1,230 @@
+{
+  "_source": "GET /v1.1/devices, shaped like the samples of the SwitchBot API documentation (OpenWonderLabs/SwitchBotAPI) and the py-switchbot-api test fixtures (MIT). Device ids and names are invented.",
+  "statusCode": 100,
+  "body": {
+    "deviceList": [
+      {
+        "deviceId": "F00000000001",
+        "deviceName": "Hub salon",
+        "deviceType": "Hub 2",
+        "enableCloudService": true,
+        "hubDeviceId": ""
+      },
+      {
+        "deviceId": "F00000000002",
+        "deviceName": "Hub Mini bureau",
+        "deviceType": "Hub Mini",
+        "enableCloudService": true,
+        "hubDeviceId": "000000000000"
+      },
+      {
+        "deviceId": "F00000000003",
+        "deviceName": "Bot cafetière",
+        "deviceType": "Bot",
+        "enableCloudService": true,
+        "hubDeviceId": "F00000000001"
+      },
+      {
+        "deviceId": "F00000000004",
+        "deviceName": "Bot radiateur",
+        "deviceType": "Bot",
+        "enableCloudService": true,
+        "hubDeviceId": "F00000000001"
+      },
+      {
+        "deviceId": "F00000000005",
+        "deviceName": "Prise lave-linge",
+        "deviceType": "Plug Mini (EU)",
+        "enableCloudService": true,
+        "hubDeviceId": "000000000000"
+      },
+      {
+        "deviceId": "F00000000006",
+        "deviceName": "Desk plug",
+        "deviceType": "Plug Mini (US)",
+        "enableCloudService": true,
+        "hubDeviceId": "000000000000"
+      },
+      {
+        "deviceId": "F00000000007",
+        "deviceName": "Prise lampe",
+        "deviceType": "Plug",
+        "enableCloudService": true,
+        "hubDeviceId": "000000000000"
+      },
+      {
+        "deviceId": "F00000000008",
+        "deviceName": "Rideau salon",
+        "deviceType": "Curtain3",
+        "enableCloudService": true,
+        "hubDeviceId": "F00000000001",
+        "calibrate": true,
+        "master": true,
+        "openDirection": "left"
+      },
+      {
+        "deviceId": "F00000000009",
+        "deviceName": "Store chambre",
+        "deviceType": "Roller Shade",
+        "enableCloudService": true,
+        "hubDeviceId": "F00000000001"
+      },
+      {
+        "deviceId": "F0000000000A",
+        "deviceName": "Store vénitien",
+        "deviceType": "Blind Tilt",
+        "enableCloudService": true,
+        "hubDeviceId": "F00000000001"
+      },
+      {
+        "deviceId": "F0000000000B",
+        "deviceName": "Porte d'entrée",
+        "deviceType": "Smart Lock Pro",
+        "enableCloudService": true,
+        "hubDeviceId": "F00000000001",
+        "group": false,
+        "master": true
+      },
+      {
+        "deviceId": "F0000000000C",
+        "deviceName": "Porte garage",
+        "deviceType": "Smart Lock Lite",
+        "enableCloudService": true,
+        "hubDeviceId": "F00000000001"
+      },
+      {
+        "deviceId": "F0000000000D",
+        "deviceName": "Thermomètre chambre",
+        "deviceType": "Meter",
+        "enableCloudService": true,
+        "hubDeviceId": "F00000000001"
+      },
+      {
+        "deviceId": "F0000000000E",
+        "deviceName": "Extérieur",
+        "deviceType": "WoIOSensor",
+        "enableCloudService": true,
+        "hubDeviceId": "F00000000001"
+      },
+      {
+        "deviceId": "F0000000000F",
+        "deviceName": "Air bureau",
+        "deviceType": "MeterPro(CO2)",
+        "enableCloudService": true,
+        "hubDeviceId": "F00000000001"
+      },
+      {
+        "deviceId": "F00000000010",
+        "deviceName": "Fenêtre cuisine",
+        "deviceType": "Contact Sensor",
+        "enableCloudService": true,
+        "hubDeviceId": "F00000000001"
+      },
+      {
+        "deviceId": "F00000000011",
+        "deviceName": "Couloir",
+        "deviceType": "Motion Sensor",
+        "enableCloudService": true,
+        "hubDeviceId": "F00000000001"
+      },
+      {
+        "deviceId": "F00000000012",
+        "deviceName": "Salle de bain",
+        "deviceType": "Water Detector",
+        "enableCloudService": true,
+        "hubDeviceId": "000000000000"
+      },
+      {
+        "deviceId": "F00000000013",
+        "deviceName": "Ampoule salon",
+        "deviceType": "Color Bulb",
+        "enableCloudService": true,
+        "hubDeviceId": "000000000000"
+      },
+      {
+        "deviceId": "F00000000014",
+        "deviceName": "Ruban TV",
+        "deviceType": "Strip Light",
+        "enableCloudService": true,
+        "hubDeviceId": "000000000000"
+      },
+      {
+        "deviceId": "F00000000015",
+        "deviceName": "Plafonnier",
+        "deviceType": "Ceiling Light",
+        "enableCloudService": true,
+        "hubDeviceId": "000000000000"
+      },
+      {
+        "deviceId": "F00000000016",
+        "deviceName": "Humidificateur",
+        "deviceType": "Humidifier",
+        "enableCloudService": true,
+        "hubDeviceId": "000000000000"
+      },
+      {
+        "deviceId": "F00000000017",
+        "deviceName": "Purificateur",
+        "deviceType": "Air Purifier PM2.5",
+        "enableCloudService": true,
+        "hubDeviceId": "000000000000"
+      },
+      {
+        "deviceId": "F00000000018",
+        "deviceName": "Aspirateur",
+        "deviceType": "Robot Vacuum Cleaner S1",
+        "enableCloudService": true,
+        "hubDeviceId": "000000000000"
+      },
+      {
+        "deviceId": "F00000000019",
+        "deviceName": "Robot S10",
+        "deviceType": "Robot Vacuum Cleaner S10",
+        "enableCloudService": true,
+        "hubDeviceId": "000000000000"
+      },
+      {
+        "deviceId": "F0000000001A",
+        "deviceName": "Ventilateur",
+        "deviceType": "Battery Circulator Fan",
+        "enableCloudService": true,
+        "hubDeviceId": "000000000000"
+      },
+      {
+        "deviceId": "F0000000001B",
+        "deviceName": "Hub cuisine",
+        "deviceType": "Hub 3",
+        "enableCloudService": true,
+        "hubDeviceId": ""
+      },
+      {
+        "deviceId": "F0000000001C",
+        "deviceName": "Caméra entrée",
+        "deviceType": "Indoor Cam",
+        "enableCloudService": true,
+        "hubDeviceId": "000000000000"
+      }
+    ],
+    "infraredRemoteList": [
+      {
+        "deviceId": "02-202301010000-01",
+        "deviceName": "Télé salon",
+        "remoteType": "TV",
+        "hubDeviceId": "F00000000001"
+      },
+      {
+        "deviceId": "02-202301010000-02",
+        "deviceName": "Clim chambre",
+        "remoteType": "Air Conditioner",
+        "hubDeviceId": "F00000000001"
+      },
+      {
+        "deviceId": "02-202301010000-03",
+        "deviceName": "Ventilo DIY",
+        "remoteType": "Others",
+        "hubDeviceId": "F00000000001"
+      }
+    ]
+  },
+  "message": "success"
+}

@@ -28,8 +28,22 @@ Gladys before reporting a problem.
 
 ## Scope
 
-In scope: the code of this repository and the Docker image it publishes.
+In scope: the code of this repository and the Docker image it publishes, in
+particular:
+
+- the SwitchBot **token and secret key**: they live in the Gladys
+  configuration (secret fields), sign every request to the SwitchBot cloud and
+  must never appear in a log line, an error message or a widget;
+- the **Gladys Plus webhook URL**, which holds the user's Open API key: it is
+  registered at SwitchBot when the option is on, and never logged;
+- what the container writes under `/data`: only the count of the API calls of
+  the day (`quota.json`), no credential;
+- the network: the container only talks to the SwitchBot cloud
+  (`https://api.switch-bot.com`) and to Gladys; it opens no port and does not
+  reach the local network;
+- the lock commands, only offered when the user turns on "Allow locking and
+  unlocking".
 
 Out of scope: Gladys Assistant itself (see its
 [security policy](https://github.com/GladysAssistant/Gladys/security/policy)),
-and the third-party services and devices the integration talks to.
+Gladys Plus, and the SwitchBot cloud, app and devices.

@@ -32,15 +32,25 @@ pushing.
 
 ```
 index.js                          SDK wiring only: handlers registered before connect()
-src/devices/index.js              registry of the device blueprints + dispatch helpers
-src/devices/<type>.js             one device type per file (buildDevice, onPoll, onSetValue...)
+src/app.js                        registers every SDK handler on the hub (tests drive the same wiring)
+src/hub.js                        discovery, reads, published states, commands, scene events
+src/poller.js                     the container's own polling timer (core onPoll = fallback)
+src/quota.js                      daily API call count (saved under /data) and polling pace
+src/webhook.js                    SwitchBot webhook through Gladys Plus (optional)
+src/switchbot/client.js           signed client of the SwitchBot cloud API v1.1
+src/devices/index.js              catalog: deviceType -> kind, Gladys device, states
+src/devices/<family>.js           one device family per file (features, states, command)
+src/devices/features.js           feature specs, converters, core state constants
+src/events.js                     scene triggers (transitions between two reads)
 src/scenes.js                     scene action handlers (manifest `scene_actions`)
-src/widgets.js                    dashboard widget handlers (manifest `widgets`)
+src/widgets.js                    the "SwitchBot" dashboard widget (manifest `widgets`)
+src/report.js                     "Test the connection" report
+src/i18n.js                       feature names and messages, en/fr/de/es
 src/config.js                     DEFAULT_CONFIG (mirrors the manifest defaults) + normalization
-src/weather.js                    example driver (Open-Meteo)
 gladys-assistant-integration.json manifest: name, config_schema, actions, image...
-docs/en.md, docs/fr.md            user documentation, re-hosted by Gladys (mandatory)
-test/                             node --test, against the SDK's fake Gladys (integration-sdk/testing)
+docs/{en,fr,de,es}.md             user documentation, re-hosted by Gladys, same sections
+test/                             node --test, on the SDK's fake Gladys and a fake SwitchBot cloud
+test/fixtures/switchbot/          documented API responses (HA, py-switchbot-api), invented ids
 .github/scripts/release.mjs       release helpers (manifest bump, changelog), tested in test/
 ```
 
@@ -70,8 +80,10 @@ test/                             node --test, against the SDK's fake Gladys (in
   `type: "provider"`: 5.1.0). `test/manifest.test.js` ties the manifest to the
   code (defaults, action, scene and widget handlers): change both sides
   together.
-- **User-facing text** is bilingual (English and French): action messages,
-  manifest texts, and `docs/en.md` / `docs/fr.md`, kept in sync.
+- **User-facing text** exists in four languages (English, French, German with
+  "du", Spanish with "usted"): action messages, manifest texts, feature names,
+  widget texts, and `docs/en.md`, `docs/fr.md`, `docs/de.md`, `docs/es.md`
+  with the same sections. `test/i18n.test.js` enforces it.
 - **Style.** Prettier formats, ESLint catches mistakes. Comments explain why,
   in English. Tests never touch the network.
 
@@ -233,3 +245,52 @@ long, et sur un « Sie »/« Ihr… » de politesse en allemand. Le store exige 
 - Docs `en`, `fr`, `de`, `es` avec les mêmes sections.
 - Chauffe, ouverture, sécurité : ne rien rendre pilotable « comme un thermostat » ou par un assistant
   vocal quand une erreur serait dangereuse (leçon d'OctoPrint).
+
+## Pièges découverts sur cette intégration (13/10/2026)
+
+- **`light-sensor/integer` n'a pas d'icône** dans le front (table des couples) : le test de
+  conformité le refuse. Utiliser `light-sensor/decimal`, même pour une échelle entière.
+- **`requestWidgetRefresh` ne renvoie pas de promesse** (fire-and-forget, `undefined`) :
+  `gladys.requestWidgetRefresh(key).catch(...)` plante. L'entourer d'un `try`.
+- Le faux Gladys du SDK enregistre les transports au format du fil :
+  `fake.transports[i].device_external_id`, pas `external_id`.
+- Le champ `model` d'un appareil découvert n'est pas dans la spec du cœur (`host-api-endpoints.md`)
+  : ne pas l'envoyer, mettre le modèle dans un `param`.
+- Le garde-fou du « Sie » de politesse attrape aussi le « Sie » (= ils/elles) en début de phrase
+  dans la doc allemande : reformuler (« Diese Auslöser… ») plutôt qu'assouplir le test.
+
+## SwitchBot (propre à cette intégration)
+
+- **API cloud v1.1** (`https://api.switch-bot.com/v1.1`), doc `OpenWonderLabs/SwitchBotAPI`.
+  Chaque requête est signée : `sign` = base64(HMAC-SHA256(secret, token + t + nonce)), `t` sur 13
+  chiffres, `nonce` UUID. Réponse HTTP 200 avec un `statusCode` à soi : 100 succès, 161 appareil
+  hors ligne, 171 hub hors ligne (le Plug Mini JP renvoie 171 lui-même), 152 inconnu, 160 commande
+  non prise en charge, 190 erreur de l'appareil.
+- **Quota : 10 000 appels par jour et par compte**, toutes applications confondues. Au-delà,
+  **HTTP 401, comme un mauvais jeton** : impossible de distinguer, le message le dit. Le sondage
+  vise la moitié du quota (`src/quota.js`) et s'arrête à 9 000 ; nouvelle tentative de connexion
+  toutes les 30 min après un 401, 5 min après une panne réseau.
+- **Les `deviceType` réels diffèrent de la doc** : `Smart Lock`, `Smart Lock Pro`, `Curtain3`,
+  `MeterPlus`, `WoIOSensor` (Outdoor Meter), `MeterPro(CO2)`, `Water Detector`, `Standing Fan`,
+  `K10+`… La source fiable est l'intégration Home Assistant `switchbot_cloud` et ses fixtures.
+- Champs piégeux : `slidePosition` 0 = **ouvert** pour rideaux et Roller Shade (Gladys : 100 =
+  ouvert) ; Blind Tilt ouvert à 50, fermé à 0 et 100, position à régler en nombre pair avec un
+  sens (`up;48`) ; `lockState` en `lock`/`unlock` (doc) ou `locked`/`unlocked`/`jammed`
+  (firmwares récents) ; `doorState` en `open`/`close` ou `opened`/`closed` ; `openState` du
+  Contact Sensor peut valoir `timeOutNotClose` (resté ouvert) ; `electricCurrent` en mA (la
+  catégorie `switch` de Gladys n'a que l'ampère) ; `weight` du Plug Mini US/JP lu comme une
+  puissance (W), comme Home Assistant ; `usedElectricity` en watt-minutes du jour ; batterie en
+  paliers (10/20/60/100, 5/15/40/80, 9/19/59/100) selon les modèles.
+- Couleur : `"r:g:b"` ↔ entier 0xRRGGBB ; température de couleur en kelvins (2700-6500) côté
+  SwitchBot, en **mireds** côté Gladys (le curseur va du froid à gauche au chaud à droite).
+- **Un seul webhook par compte SwitchBot** : en enregistrer un supprime celui d'une autre
+  application (Home Assistant fait pareil). D'où l'option désactivée par défaut et l'avertissement
+  dans la config. L'URL Gladys Plus contient la clé Open API : jamais dans les journaux. Les
+  événements servent de déclencheur (lecture de l'appareil), jamais de donnée.
+- Télécommandes IR : aucun état ; commandes standard (`turnOn`, `setAll`…) en `commandType:
+"command"`, tout autre nom = bouton personnalisé en `"customize"`, sensible à la casse ; type
+  `Others` = boutons personnalisés seulement.
+- Serrures : lecture seule par défaut (`lock_control`), règle « sécurité » du mainteneur.
+- Au (re)démarrage, seuls 10 appareils sont lus d'un coup (`RESTART_BURST`), les autres par les
+  ticks suivants (2 toutes les 5 s) : une rafale complète sur un grand parc dépasserait les 300
+  états par minute du cœur. Un appareil ajouté dans Gladys est lu aussitôt.

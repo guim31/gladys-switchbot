@@ -1,45 +1,66 @@
 // -----------------------------------------------------------------------------
-// Integration configuration.
-//
-// The configuration is filled in by the user in Gladys, from the `config_schema`
-// declared in `gladys-assistant-integration.json`. The SDK fetches it for you
-// (`gladys.getConfig()`) and notifies you of every change through
-// `gladys.onConfigUpdated()`.
-//
-// This module only provides defaults and normalizes the received object, so the
-// rest of the code never has to deal with `undefined`.
+// Integration configuration: defaults (they mirror the `default` values of the
+// manifest `config_schema`, see test/manifest.test.js) and normalization, so
+// the rest of the code never deals with strings, blanks or `undefined`.
 // -----------------------------------------------------------------------------
 
-// Defaults: they MUST stay consistent with the `default` values declared in the
-// `config_schema` of the manifest.
+export const LANGUAGES = ['en', 'fr', 'de', 'es'];
+
+// `poll_interval` options, in minutes; `auto` sizes the pace on the number of
+// devices to stay well inside the daily quota (see src/quota.js).
+export const POLL_INTERVALS = ['auto', '1', '2', '5', '10', '15', '30', '60'];
+
 export const DEFAULT_CONFIG = {
-  latitude: 48.8566, // Paris
-  longitude: 2.3522,
-  unit: 'celsius', // 'celsius' | 'fahrenheit'
-  // Seconds between two reads of the polled sensors. Gladys polls at most once
-  // a minute: slower intervals are applied by skipping polls (see
-  // createPoller in src/devices/index.js).
-  poll_frequency: 300,
-  // Reserved key (NOT in config_schema): because the manifest declares both
-  // 'local' and 'cloud' in its `transports` field, Gladys shows a standard
-  // "Prefer the local connection" toggle and sends the user's choice here.
-  // Read-only for the integration; defaults to true.
-  GLADYS_PREFER_LOCAL: true,
+  token: '',
+  secret: '',
+  poll_interval: 'auto',
+  webhook: false,
+  ir_remotes: false,
+  lock_control: false,
+  language: 'fr',
+};
+
+// A token or secret pasted from the app may carry spaces or line breaks.
+const cleanCredential = (value) => (typeof value === 'string' ? value.replace(/\s+/g, '') : '');
+
+// Config values arrive as strings from some forms: accept both.
+const toBoolean = (value, fallback) => {
+  if (typeof value === 'boolean') {
+    return value;
+  }
+  if (value === 'true' || value === 1 || value === '1') {
+    return true;
+  }
+  if (value === 'false' || value === 0 || value === '0') {
+    return false;
+  }
+  return fallback;
 };
 
 /**
- * Merge the user config with the defaults.
- * @param {Record<string, unknown>} raw config returned by the SDK
+ * @param {Record<string, unknown>} raw the configuration returned by the SDK
  */
 export function normalizeConfig(raw = {}) {
+  const source = raw && typeof raw === 'object' ? raw : {};
+  const interval = String(source.poll_interval ?? DEFAULT_CONFIG.poll_interval);
+  const language = String(source.language ?? DEFAULT_CONFIG.language);
   return {
-    ...DEFAULT_CONFIG,
-    ...raw,
-    // Force the types: config may arrive as strings from a form.
-    latitude: Number(raw.latitude ?? DEFAULT_CONFIG.latitude),
-    longitude: Number(raw.longitude ?? DEFAULT_CONFIG.longitude),
-    poll_frequency: Number(raw.poll_frequency ?? DEFAULT_CONFIG.poll_frequency),
-    // The preference is a boolean; anything but an explicit false means true.
-    GLADYS_PREFER_LOCAL: raw.GLADYS_PREFER_LOCAL !== false,
+    token: cleanCredential(source.token),
+    secret: cleanCredential(source.secret),
+    poll_interval: POLL_INTERVALS.includes(interval) ? interval : DEFAULT_CONFIG.poll_interval,
+    webhook: toBoolean(source.webhook, DEFAULT_CONFIG.webhook),
+    ir_remotes: toBoolean(source.ir_remotes, DEFAULT_CONFIG.ir_remotes),
+    lock_control: toBoolean(source.lock_control, DEFAULT_CONFIG.lock_control),
+    language: LANGUAGES.includes(language) ? language : DEFAULT_CONFIG.language,
   };
+}
+
+/** Both credentials are needed to sign a request. */
+export function isConfigured(config) {
+  return config.token !== '' && config.secret !== '';
+}
+
+/** The chosen polling interval in milliseconds, or null for `auto`. */
+export function chosenIntervalMs(config) {
+  return config.poll_interval === 'auto' ? null : Number(config.poll_interval) * 60_000;
 }
