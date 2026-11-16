@@ -75,10 +75,116 @@ test('a lock is controllable only with the option on', () => {
   const keys = (config) =>
     kind.features(raw(pro), { config: normalizeConfig(config) }).map((f) => f.key);
   assert.deepEqual(keys({}), ['lock-state', 'battery', 'door']);
-  assert.deepEqual(keys({ lock_control: true }), ['lock', 'lock-state', 'battery', 'door']);
+  assert.deepEqual(keys({ lock_control: true }), [
+    'lock',
+    'deadbolt',
+    'lock-state',
+    'battery',
+    'door',
+  ]);
   assert.equal(commandOf(pro, 'lock', 1, { config: normalizeConfig() }), null);
+  assert.equal(commandOf(pro, 'deadbolt', 1, { config: normalizeConfig() }), null);
   assert.deepEqual(commandOf(pro, 'lock', 1).commands, [{ command: 'lock' }]);
   assert.deepEqual(commandOf(pro, 'lock', 0).commands, [{ command: 'unlock' }]);
+  assert.deepEqual(commandOf(pro, 'deadbolt', 1), {
+    commands: [{ command: 'deadbolt' }],
+    expected: { lock: 0 },
+  });
+});
+
+// The Lock Ultra Max of a user (forum, 16/11/2026) read "locked" for good and
+// could only be unlocked: its resting state once unlocked is
+// `latchBoltLocked`, read as locked by 1.0. Statuses written from the
+// SwitchBot documentation of the Lock Ultra Max (no capture of the real one).
+const ULTRA_MAX = {
+  deviceId: 'F000000000F1',
+  deviceName: 'Entrée',
+  deviceType: 'Smart Lock Ultra Max',
+  enableCloudService: true,
+  hubDeviceId: 'F000000000F2',
+  group: false,
+  master: true,
+  groupName: null,
+  lockDevicesIds: ['F000000000F1'],
+};
+const ultraStatus = (lockState, doorState) => ({
+  deviceId: 'F000000000F1',
+  deviceType: 'Smart Lock Ultra Max',
+  hubDeviceId: 'F000000000F2',
+  battery: 90,
+  version: 'V1.2',
+  lockState,
+  doorState,
+  calibrate: true,
+});
+
+test('a Lock Ultra Max: every documented lock state, any case, and its door', () => {
+  const kind = kindOf('Smart Lock Ultra Max');
+  assert.equal(kind.kind, 'lock');
+  const read = (lockState, doorState = 'close') =>
+    kind.states(ultraStatus(lockState, doorState), ULTRA_MAX);
+  const cases = {
+    locked: [1, 1],
+    LOCKED: [1, 1],
+    lock: [1, 1],
+    unlocked: [0, 0],
+    UNLOCKED: [0, 0],
+    unlock: [0, 0],
+    latchBoltLocked: [0, 0],
+    LATCHBOLTLOCKED: [0, 0],
+    locking: [undefined, LOCK_STATE.ACTIVITY],
+    unlocking: [undefined, LOCK_STATE.ACTIVITY],
+    jammed: [undefined, LOCK_STATE.ERROR],
+    JAMMED: [undefined, LOCK_STATE.ERROR],
+    halfLocked: [undefined, LOCK_STATE.ERROR],
+    somethingNew: [undefined, undefined],
+  };
+  for (const [lockState, [lock, state]] of Object.entries(cases)) {
+    assert.equal(read(lockState).lock, lock, lockState);
+    assert.equal(read(lockState)['lock-state'], state, lockState);
+  }
+  for (const [doorState, door] of Object.entries({
+    open: OPENING_SENSOR_STATE.OPEN,
+    OPEN: OPENING_SENSOR_STATE.OPEN,
+    opened: OPENING_SENSOR_STATE.OPEN,
+    close: OPENING_SENSOR_STATE.CLOSE,
+    CLOSE: OPENING_SENSOR_STATE.CLOSE,
+    closed: OPENING_SENSOR_STATE.CLOSE,
+    Closed: OPENING_SENSOR_STATE.CLOSE,
+    unknown: undefined,
+  })) {
+    assert.equal(read('locked', doorState).door, door, doorState);
+  }
+  assert.equal(read('locked').battery, 90);
+  const keys = kind
+    .features(ULTRA_MAX, { config: normalizeConfig({ lock_control: true }) })
+    .map((f) => f.key);
+  assert.deepEqual(keys, ['lock', 'deadbolt', 'lock-state', 'battery', 'door']);
+  const command = (key, value) =>
+    kind.command({
+      key,
+      value,
+      device: ULTRA_MAX,
+      status: ultraStatus('locked', 'close'),
+      config: normalizeConfig({ lock_control: true }),
+    });
+  assert.deepEqual(command('lock', 1), { commands: [{ command: 'lock' }], expected: { lock: 1 } });
+  assert.deepEqual(command('lock', 0), {
+    commands: [{ command: 'unlock' }],
+    expected: { lock: 0 },
+  });
+  assert.deepEqual(command('deadbolt', 1).commands, [{ command: 'deadbolt' }]);
+});
+
+test('no deadbolt button where the API does not document it', () => {
+  const config = normalizeConfig({ lock_control: true });
+  for (const deviceType of ['Smart Lock Lite', 'Smart Lock Vision', 'Lock Vision Pro']) {
+    const device = { ...ULTRA_MAX, deviceType };
+    const kind = kindOf(deviceType);
+    const keys = kind.features(device, { config }).map((f) => f.key);
+    assert.ok(!keys.includes('deadbolt'), deviceType);
+    assert.equal(kind.command({ key: 'deadbolt', value: 1, device, config }), null, deviceType);
+  }
 });
 
 test('covers: position 100 = open in Gladys, inverted for curtains and roller shades', () => {

@@ -51,6 +51,10 @@ export const control = (
   ...(options ? { optionsKey: options } : {}),
 });
 
+/** A push button: no state to read, nothing to wait for. */
+export const push = (key, nameKey) =>
+  control(key, nameKey, C.BUTTON, T.BUTTON.PUSH, { max: 1, hasFeedback: false });
+
 /** The battery level every battery-powered device reports. */
 export const battery = () =>
   sensor('battery', 'battery', C.BATTERY, T.BATTERY.INTEGER, { max: 100, unit: U.PERCENT });

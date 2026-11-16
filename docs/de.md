@@ -130,6 +130,15 @@ entriegelt, in Bewegung, blockiert oder halb verriegelt, und den Türzustand). U
 und Entriegeln erlauben** ein und füge das Schloss danach hinzu (oder aktualisiere es im Tab
 „Entdecken“). Denk daran, wer und was diese Befehle erreichen kann.
 
+Mit der Option bekommen Lock, Lock Pro, Lock Ultra und Lock Ultra Max außerdem einen Knopf **Nur
+den Riegel entriegeln**: Der Riegel fährt ein, die Falle bleibt, die Tür bleibt also zu, bis du die
+Klinke drückst (der Befehl `unlock` zieht auch die Falle zurück, und die Tür springt auf). Ein vor
+Version 1.1 hinzugefügtes Schloss bekommt ihn mit **Aktualisieren** im Tab „Entdecken“.
+
+Ein Schloss mit eingefahrenem Riegel, bei dem nur die Falle die Tür hält (`latchBoltLocked` bei
+SwitchBot, der übliche Zustand eines entriegelten Lock Ultra), gilt als **entriegelt**: Jeder kann
+mit der Klinke öffnen.
+
 ### IR-Fernbedienungen
 
 Mit der Option **IR-Fernbedienungen** wird jede virtuelle Fernbedienung deiner Hubs (TV,
@@ -194,6 +203,10 @@ die Gladys-Plus-Option.
 
 ## Fehlerbehebung
 
+- **Ein Gerät zeigt einen falschen Wert**: Der Knopf **Gerätediagnose** in der Konfiguration zeigt
+  den Rohstatus, den SwitchBot für jedes Gerät liefert (Kennungen maskiert, Namen weggelassen, ein
+  API-Aufruf pro Gerät, höchstens 20 Geräte). Kopiere ihn ins Forum, zusammen mit dem, was das Gerät
+  wirklich anzeigt.
 - **„SwitchBot lehnt die Zugangsdaten ab“**: Prüfe Token und geheimen Schlüssel (kopiere sie erneut
   aus der App; ein neues Token macht das alte ungültig). Dieselbe Antwort kommt, wenn das
   Tageskontingent aufgebraucht ist: Warte bis Mitternacht und verlängere das Intervall, wenn du das

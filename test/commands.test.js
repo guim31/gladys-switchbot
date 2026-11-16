@@ -104,6 +104,22 @@ test('a lock cannot be unlocked when the option is off', async () => {
   assert.equal(on.cloud.commands.at(-1).command, 'lock');
 });
 
+test('the deadbolt button retracts the deadbolt only, and needs the option', async () => {
+  const on = await createWorld({ config: { lock_control: true } });
+  const id = 'F0000000000B';
+  const deadbolt = on.feature(id, 'deadbolt');
+  assert.equal(deadbolt.category, 'button');
+  assert.equal(deadbolt.type, 'push');
+  assert.equal(deadbolt.read_only, false);
+  const ack = await on.gladys.fake.setValue(on.discovered(id), deadbolt, 1);
+  assert.equal(ack.success, true);
+  assert.equal(on.cloud.commands.at(-1).command, 'deadbolt');
+  await on.gladys.fake.configUpdated({ ...on.gladys.fake.config, lock_control: false });
+  const refused = await on.gladys.fake.setValue(on.discovered(id), deadbolt, 1);
+  assert.equal(refused.success, false);
+  assert.equal(on.cloud.count('command'), 1);
+});
+
 test('an IR remote power button sends the standard command', async () => {
   const world = await createWorld({ config: { ir_remotes: true } });
   const device = world.gladys.fake.discoveredDevices.find((d) =>

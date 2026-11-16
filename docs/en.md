@@ -122,6 +122,14 @@ moving, jammed or half-locked, and the door state). To lock and unlock from Glad
 scenes, voice assistants linked to Gladys), turn on **Allow locking and unlocking**, then add the
 lock (or update it from the Discovery tab). Think about who and what can reach those commands.
 
+With the option on, the Lock, Lock Pro, Lock Ultra and Lock Ultra Max also get an **Unlock the
+deadbolt only** button: the deadbolt retracts but the latch stays, so the door stays closed until
+the handle is turned (the `unlock` command pulls the latch too, and the door opens ajar). A lock
+added before version 1.1 gets it with **Update** in the Discovery tab.
+
+A lock whose deadbolt is retracted while the latch holds the door (`latchBoltLocked` for SwitchBot,
+the usual state of a Lock Ultra once unlocked) reads **unlocked**: anyone can open with the handle.
+
 ### IR remotes
 
 With the **IR remotes** option, every virtual remote of your hubs (TV, air conditioner, fan,
@@ -183,6 +191,10 @@ interval (a short motion) can go unnoticed: use the Gladys Plus option for motio
 
 ## Troubleshooting
 
+- **A device reads a wrong value**: the **Device diagnostics** button of the Configuration
+  screen shows the raw status SwitchBot returns for each device (identifiers masked, names left
+  out, one API call per device, 20 devices at most). Paste it on the forum with what the device
+  really shows.
 - **"SwitchBot refused the credentials"**: check the token and the secret key (copy them again from
   the app; a new token invalidates the old one). The same answer comes when the daily quota is
   spent: wait for midnight, and lengthen the interval if you share the token with another app.

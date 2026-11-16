@@ -7,6 +7,7 @@
 import { createLogger } from '@gladysassistant/integration-sdk';
 import { SwitchBotHub } from './hub.js';
 import { TEXT } from './i18n.js';
+import { ActionFailure, deviceDiagnostics } from './diagnostic.js';
 import { checkReport } from './report.js';
 import { SCENE_ACTIONS } from './scenes.js';
 import { WEBHOOK_KEY, eventDeviceId } from './webhook.js';
@@ -74,7 +75,19 @@ export function registerHandlers(gladys, options = {}) {
     whenReady(async () => {
       logger.info('Connection test requested');
       await hub.discover();
+      // A failure is thrown (red in Gladys), only a working account returned.
+      if (hub.connection !== 'ok') {
+        throw new ActionFailure(checkReport(hub));
+      }
       return checkReport(hub);
+    }),
+  );
+
+  gladys.onAction(
+    'device_diagnostics',
+    whenReady(async () => {
+      logger.info('Device diagnostics requested');
+      return deviceDiagnostics(hub);
     }),
   );
 

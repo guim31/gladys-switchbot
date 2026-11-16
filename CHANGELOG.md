@@ -10,6 +10,22 @@ the notes of the version's GitHub Release.
 
 ## [Unreleased]
 
+### Fixed
+
+- Locks (Lock Ultra, Ultra Max, Pro, Vision): the `latchBoltLocked` state (deadbolt retracted, the
+  latch alone holding the door) now reads unlocked. It read locked, so an unlocked Lock Ultra
+  showed a closed padlock and the dashboard switch only offered to unlock.
+- "Test the connection" shows a failure (no credentials, refused credentials, cloud unreachable)
+  as an error, in red, instead of a message in green.
+
+### Added
+
+- "Unlock the deadbolt only" button on the Lock, Lock Pro, Lock Ultra and Lock Ultra Max, with
+  the "Allow locking and unlocking" option: the door stays closed until the handle is turned. A
+  lock already added gets it with "Update" in the Discovery tab.
+- "Device diagnostics" action in the Configuration screen: the raw status SwitchBot returns for
+  each device (20 at most), identifiers masked and names left out, to paste on the forum.
+
 ## [1.0.1] - 2026-10-13
 
 ### Added

@@ -271,6 +271,22 @@
         "es": "Lee la lista de dispositivos (una llamada a la API) y muestra los dispositivos, el ritmo de lectura y las llamadas del día."
       },
       "timeout_seconds": 30
+    },
+    {
+      "key": "device_diagnostics",
+      "label": {
+        "en": "Device diagnostics",
+        "fr": "Diagnostic des appareils",
+        "de": "Gerätediagnose",
+        "es": "Diagnóstico de los dispositivos"
+      },
+      "description": {
+        "en": "Read only: shows the raw status SwitchBot returns for each device (up to 20, one API call each), identifiers masked, to paste on the forum.",
+        "fr": "Lecture seule : affiche le statut brut renvoyé par SwitchBot pour chaque appareil (20 au plus, un appel d'API chacun), identifiants masqués, à coller sur le forum.",
+        "de": "Nur lesen: zeigt den Rohstatus, den SwitchBot für jedes Gerät liefert (höchstens 20, je ein API-Aufruf), Kennungen maskiert, zum Einfügen ins Forum.",
+        "es": "Solo lectura: muestra el estado bruto que SwitchBot devuelve para cada dispositivo (20 como máximo, una llamada a la API cada uno), identificadores ocultos, para pegarlo en el foro."
+      },
+      "timeout_seconds": 90
     }
   ],
   "scene_triggers": [

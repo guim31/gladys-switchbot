@@ -8,10 +8,24 @@
 // the "Allow locking and unlocking" option, and adds the command feature to
 // the devices added after it is turned on.
 //
-// `lockState` reads `locked` / `unlocked` / `jammed` (and `locking`,
-// `latchBoltLocked`...) on recent firmware, `lock` / `unlock` in the API
-// documentation; `doorState` reads `open` / `close` or `opened` / `closed`:
-// both spellings are accepted. The Lock Lite has no door sensor.
+// `lockState` reads `locked` / `unlocked` / `locking` / `unlocking` /
+// `jammed` / `latchBoltLocked` / `halfLocked` (Lock Ultra Max documentation),
+// `lock` / `unlock` / `latchBoltLocked` (older documentation), and upper case
+// over the webhook; `doorState` reads `open` / `close` or `opened` / `closed`:
+// every spelling is accepted, case aside. The Lock Lite has no door sensor.
+//
+// `latchBoltLocked` is the resting state of the Lock Ultra (and the Pro, the
+// Vision) once unlocked: the deadbolt is retracted, only the latch holds the
+// door, and the handle opens it. Read as locked (version 1.0), an unlocked
+// Ultra showed a closed padlock for good, and the dashboard switch, sitting
+// on "locked", only offered to unlock. It is unlocked. `halfLocked` (the
+// deadbolt stopped half way) secures nothing: an error, like `jammed`.
+//
+// `deadbolt` retracts the deadbolt without pulling the latch (the door stays
+// closed until the handle is turned), where `unlock` pulls the latch too on
+// the models that have one. Documented for the Lock, Pro, Pro Wifi, Ultra and
+// Ultra Max; not for the Vision models, and Home Assistant leaves it out of
+// the Lite: same here.
 // -----------------------------------------------------------------------------
 
 import {
@@ -22,15 +36,25 @@ import {
   battery,
   control,
   num,
+  push,
   sensor,
 } from './features.js';
 
-const LOCKED = ['locked', 'lock', 'latchboltlocked'];
-const UNLOCKED = ['unlocked', 'unlock'];
+const LOCKED = ['locked', 'lock'];
+const UNLOCKED = ['unlocked', 'unlock', 'latchboltlocked'];
 const MOVING = ['locking', 'unlocking'];
 const PROBLEM = ['jammed', 'halflocked'];
 
 const WITHOUT_DOOR_SENSOR = ['Smart Lock Lite'];
+const WITH_DEADBOLT = [
+  'Smart Lock',
+  'Smart Lock Pro',
+  'Smart Lock Pro Wifi',
+  'Smart Lock Ultra',
+  'Smart Lock Ultra Max',
+];
+
+export const hasDeadbolt = (device) => WITH_DEADBOLT.includes(device?.deviceType);
 
 export function readLockState(value) {
   if (typeof value !== 'string') {
@@ -83,6 +107,9 @@ export const lock = {
     }
     if (config.lock_control) {
       specs.unshift(control('lock', 'lock', C.LOCK, T.LOCK.BINARY, { max: 1 }));
+      if (hasDeadbolt(device)) {
+        specs.splice(1, 0, push('deadbolt', 'deadbolt'));
+      }
     }
     return specs;
   },
@@ -99,9 +126,17 @@ export const lock = {
     };
   },
 
-  command({ key, value, config }) {
+  command({ key, value, device, config }) {
     // The option may have been turned off after the device was added.
-    if (key !== 'lock' || !config.lock_control) {
+    if (!config.lock_control) {
+      return null;
+    }
+    if (key === 'deadbolt') {
+      return hasDeadbolt(device)
+        ? { commands: [{ command: 'deadbolt' }], expected: { lock: 0 } }
+        : null;
+    }
+    if (key !== 'lock') {
       return null;
     }
     const locked = Number(value) === 1;

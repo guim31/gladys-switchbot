@@ -41,13 +41,17 @@ test('not configured: a status asks for the credentials, nothing is called', asy
   assert.equal(world.cloud.calls.length, 0);
   assert.equal(world.gladys.fake.connectionStatus.connected, false);
   assert.match(world.gladys.fake.connectionStatus.message.fr, /jeton et la clé secrète/);
-  const report = await world.gladys.fake.action('check_connection');
-  assert.match(report.data.message.en, /Enter the token/);
+  // A failure is thrown: Gladys shows it in red.
+  const ack = await world.gladys.fake.action('check_connection');
+  assert.equal(ack.success, false);
+  assert.match(ack.error.en, /Enter the token/);
+  assert.match(ack.error.fr, /jeton et la clé secrète/);
 });
 
 test('the connection report: devices, unsupported ones, remotes, pace, calls', async () => {
   const world = await createWorld();
-  const { data } = await world.gladys.fake.action('check_connection');
+  const { success, data } = await world.gladys.fake.action('check_connection');
+  assert.equal(success, true);
   assert.deepEqual(Object.keys(data.message).sort(), ['de', 'en', 'es', 'fr']);
   assert.match(data.message.en, /28 SwitchBot device\(s\), 26 supported\./);
   assert.match(data.message.en, /Not supported: Hub Mini, Indoor Cam\./);
@@ -59,8 +63,9 @@ test('the connection report: devices, unsupported ones, remotes, pace, calls', a
 test('refused credentials are reported in the status and the report', async () => {
   const world = await createWorld({ addAll: false });
   world.cloud.refuseAll = true;
-  const { data } = await world.gladys.fake.action('check_connection');
-  assert.match(data.message.de, /SwitchBot lehnt die Zugangsdaten ab/);
+  const ack = await world.gladys.fake.action('check_connection');
+  assert.equal(ack.success, false);
+  assert.match(ack.error.de, /SwitchBot lehnt die Zugangsdaten ab/);
   assert.equal(world.gladys.fake.connectionStatus.connected, false);
 });
 
