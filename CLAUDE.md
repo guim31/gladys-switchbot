@@ -293,13 +293,14 @@ long, et sur un « Sie »/« Ihr… » de politesse en allemand. Le store exige 
 "command"`, tout autre nom = bouton personnalisé en `"customize"`, sensible à la casse ; type
   `Others` = boutons personnalisés seulement.
 - Serrures : lecture seule par défaut (`lock_control`), règle « sécurité » du mainteneur.
-- **`latchBoltLocked` = déverrouillé** (16/11/2026, Lock Ultra Max de pjrlyon) : pêne dormant
-  rentré, seul le demi-tour tient la porte ; c'est l'état de repos d'une Lock Ultra déverrouillée.
-  Le lire « verrouillé » (comme Home Assistant) figeait le cadenas fermé et l'interrupteur du
+- **`latchBoltLocked` = déverrouillé sur Lock Ultra et Ultra Max seulement** (16/11/2026, Ultra Max
+  de pjrlyon) : pêne dormant rentré, seul le demi-tour tient la porte, état de repos d'une Ultra
+  déverrouillée ; les autres modèles gardent la lecture de Home Assistant (verrouillé).
+  Le lire « verrouillé » figeait le cadenas fermé et l'interrupteur du
   tableau de bord sur « verrouillé ». `halfLocked` = erreur. Commande `deadbolt` (pêne dormant
   seul) documentée pour Lock, Pro, Pro Wifi, Ultra, Ultra Max : bouton `button/push` sous la même
   option. Statut réel d'une Ultra Max jamais vu : l'action « Diagnostic des appareils »
-  (`src/diagnostic.js`) sert à le récupérer.
+  (`src/diagnostic.js`) sert à le récupérer ; elle retire noms et `keyList` des claviers (codes).
 - Messages d'action : un échec est **levé** (`ActionFailure`, rouge), seul un succès est renvoyé.
 - Au (re)démarrage, seuls 10 appareils sont lus d'un coup (`RESTART_BURST`), les autres par les
   ticks suivants (2 toutes les 5 s) : une rafale complète sur un grand parc dépasserait les 300

@@ -131,13 +131,15 @@ und Entriegeln erlauben** ein und füge das Schloss danach hinzu (oder aktualisi
 „Entdecken“). Denk daran, wer und was diese Befehle erreichen kann.
 
 Mit der Option bekommen Lock, Lock Pro, Lock Ultra und Lock Ultra Max außerdem einen Knopf **Nur
-den Riegel entriegeln**: Der Riegel fährt ein, die Falle bleibt, die Tür bleibt also zu, bis du die
+den Riegel entriegeln** (Befehl `deadbolt`, nicht an der Hardware geprüft): Laut SwitchBot
+fährt der Riegel ein, die Falle bleibt, die Tür bleibt also zu, bis du die
 Klinke drückst (der Befehl `unlock` zieht auch die Falle zurück, und die Tür springt auf). Ein vor
 Version 1.1 hinzugefügtes Schloss bekommt ihn mit **Aktualisieren** im Tab „Entdecken“.
 
-Ein Schloss mit eingefahrenem Riegel, bei dem nur die Falle die Tür hält (`latchBoltLocked` bei
-SwitchBot, der übliche Zustand eines entriegelten Lock Ultra), gilt als **entriegelt**: Jeder kann
-mit der Klinke öffnen.
+Bei einem Lock Ultra oder Ultra Max gilt ein Schloss mit eingefahrenem Riegel, bei dem nur die Falle die Tür hält (`latchBoltLocked` bei
+SwitchBot, der übliche Zustand eines entriegelten Lock Ultra), als **entriegelt**: Jeder kann
+mit der Klinke öffnen. Die anderen Modelle lesen diesen Zustand weiter als verriegelt, bis eine Diagnose
+etwas anderes zeigt.
 
 ### IR-Fernbedienungen
 

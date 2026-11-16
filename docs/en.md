@@ -123,12 +123,14 @@ scenes, voice assistants linked to Gladys), turn on **Allow locking and unlockin
 lock (or update it from the Discovery tab). Think about who and what can reach those commands.
 
 With the option on, the Lock, Lock Pro, Lock Ultra and Lock Ultra Max also get an **Unlock the
-deadbolt only** button: the deadbolt retracts but the latch stays, so the door stays closed until
+deadbolt only** button (the `deadbolt` command; not checked on hardware): as SwitchBot
+describes it, the deadbolt retracts but the latch stays, so the door stays closed until
 the handle is turned (the `unlock` command pulls the latch too, and the door opens ajar). A lock
 added before version 1.1 gets it with **Update** in the Discovery tab.
 
-A lock whose deadbolt is retracted while the latch holds the door (`latchBoltLocked` for SwitchBot,
-the usual state of a Lock Ultra once unlocked) reads **unlocked**: anyone can open with the handle.
+On a Lock Ultra or Ultra Max, a lock whose deadbolt is retracted while the latch holds the door (`latchBoltLocked` for SwitchBot,
+the usual state of a Lock Ultra once unlocked) reads **unlocked**: anyone can open with the handle. The other models keep reading
+it locked until a diagnostic shows otherwise.
 
 ### IR remotes
 

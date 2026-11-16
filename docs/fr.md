@@ -136,14 +136,16 @@ Gladys), activez **Autoriser verrouillage et déverrouillage**, puis ajoutez la 
 à jour depuis l'onglet Découverte). Pensez à qui et à quoi peut atteindre ces commandes.
 
 Avec l'option, les Lock, Lock Pro, Lock Ultra et Lock Ultra Max ont aussi un bouton **Déverrouiller
-le pêne dormant seul** : le pêne dormant rentre mais le pêne demi-tour reste, la porte reste fermée
+le pêne dormant seul** (commande `deadbolt`, non vérifiée sur le matériel) : d'après
+SwitchBot, le pêne dormant rentre mais le pêne demi-tour reste, la porte reste fermée
 jusqu'à ce qu'on abaisse la poignée (la commande `unlock` tire aussi le demi-tour, et la porte
 s'entrouvre). Une serrure ajoutée avant la version 1.1 le reçoit par **Mettre à jour** dans l'onglet
 Découverte.
 
-Une serrure dont le pêne dormant est rentré et dont seul le demi-tour retient la porte
+Sur une Lock Ultra ou Ultra Max, une serrure dont le pêne dormant est rentré et dont seul le demi-tour retient la porte
 (`latchBoltLocked` pour SwitchBot, l'état habituel d'une Lock Ultra déverrouillée) se lit
-**déverrouillée** : n'importe qui ouvre avec la poignée.
+**déverrouillée** : n'importe qui ouvre avec la poignée. Les autres modèles le lisent encore
+verrouillé, en attendant un diagnostic qui dise le contraire.
 
 ### Télécommandes IR
 

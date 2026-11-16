@@ -4,13 +4,16 @@
 // for a user to paste on the forum when a device reads wrong (a new model, a
 // value nobody documented). Read only: it never sends a command.
 //
-// Identifiers are masked: every value of a key ending in `Id`, `Ids` or `Mac`
-// becomes an alias (`#1`, `#2`...), the same alias wherever the same id shows
-// up, so a `hubDeviceId` still points to its hub. Names are left out (they
-// can say whose door it is). The token and the secret only sign the requests:
-// they are never in a response.
+// Identifiers are masked: every value of a key `id` or ending in `Id`, `Ids`
+// or `Mac` (any case) becomes an alias (`#1`, `#2`...), the same alias
+// wherever the same id shows up, so a `hubDeviceId` still points to its hub.
+// Names are left out (they can say whose door it is), and so is the
+// `keyList` of a Keypad (its passcodes, encrypted, and their owners). The
+// token and the secret only sign the requests: they are never in a response.
 //
-// One API call for the list, one per device, at most MAX_DEVICES devices.
+// One API call for the list, one per device, at most MAX_DEVICES devices:
+// the locks first, then the types this integration does not know, the
+// devices a diagnostic is usually about.
 // -----------------------------------------------------------------------------
 
 import { TEXT, translate } from './i18n.js';
@@ -18,8 +21,8 @@ import { kindOf } from './devices/index.js';
 
 export const MAX_DEVICES = 20;
 
-const ID_KEY = /(Id|Ids|Mac)$/;
-const DROPPED_KEYS = new Set(['deviceName', 'groupName']);
+const ID_KEY = /(id|ids|mac)$/i;
+const DROPPED_KEY = /(name|password|passcode|secret|token|^iv|^keylist)$/i;
 
 /** Gladys shows a returned message in green, a thrown one in red. */
 export class ActionFailure extends Error {
@@ -75,7 +78,7 @@ export function maskIds(value, aliases = new Map(), key = '') {
   if (value !== null && typeof value === 'object') {
     const masked = {};
     for (const [k, v] of Object.entries(value)) {
-      if (!DROPPED_KEYS.has(k)) {
+      if (!DROPPED_KEY.test(k)) {
         masked[k] = maskIds(v, aliases, k);
       }
     }
@@ -117,28 +120,39 @@ export async function deviceDiagnostics(hub) {
   if (devices.length === 0) {
     throw new ActionFailure(translate(DIAG_TEXT, (text) => text.noDevice));
   }
-  const shown = devices.slice(0, MAX_DEVICES);
+  const rank = (raw) => {
+    const kind = kindOf(raw.deviceType);
+    return kind?.kind === 'lock' ? 0 : kind ? 2 : 1;
+  };
+  const shown = devices
+    .map((raw, index) => ({ raw, index }))
+    .sort((a, b) => rank(a.raw) - rank(b.raw) || a.index - b.index)
+    .slice(0, MAX_DEVICES)
+    .map(({ raw }) => raw);
   const aliases = new Map();
-  // The list first: the aliases follow the order of the account.
+  // The list entries first: their ids get the first aliases.
   const blocks = shown.map((raw) => ({ raw, entry: maskIds(raw, aliases) }));
   let answered = 0;
   let lastError;
-  for (const block of blocks) {
-    try {
-      block.status = maskIds(await hub.client.getStatus(block.raw.deviceId), aliases);
-      answered += 1;
-    } catch (err) {
-      if (err?.code === 'auth') {
-        throw new ActionFailure(TEXT.authFailed);
+  try {
+    for (const block of blocks) {
+      try {
+        block.status = maskIds(await hub.client.getStatus(block.raw.deviceId), aliases);
+        answered += 1;
+      } catch (err) {
+        if (err?.code === 'auth') {
+          throw new ActionFailure(TEXT.authFailed);
+        }
+        lastError = err?.message ?? String(err);
+        block.error = lastError;
       }
-      lastError = err?.message ?? String(err);
-      block.error = lastError;
     }
+  } finally {
+    await hub.saveQuota({ force: true });
   }
   if (answered === 0) {
     throw new ActionFailure(translate(DIAG_TEXT, (text) => text.noAnswer(lastError)));
   }
-  await hub.saveQuota({ force: true });
   return translate(DIAG_TEXT, (text) =>
     [
       text.header(shown.length, devices.length, shown.length + 1),

@@ -40,6 +40,33 @@ test('identifiers become aliases, the same id the same alias, names dropped', ()
   assert.deepEqual(status, { deviceId: '#1', deviceMac: '#1', lockState: 'latchBoltLocked' });
 });
 
+test('a Keypad: no passcode, no key name, no key id', () => {
+  const masked = maskIds({
+    deviceId: 'F000000000F3',
+    deviceName: 'Clavier',
+    deviceType: 'Keypad Vision Pro',
+    lockDeviceId: 'F000000000F1',
+    keyList: [
+      { id: 3, name: 'Code de Mamie', type: 'permanent', password: 'c2VjcmV0', iv: 'aXY=' },
+    ],
+    MAC: 'F0:00:00:00:00:F3',
+  });
+  assert.deepEqual(masked, {
+    deviceId: '#1',
+    deviceType: 'Keypad Vision Pro',
+    lockDeviceId: '#2',
+    MAC: '#1',
+  });
+});
+
+test('the locks come first, beyond the 20-device cap', async () => {
+  const world = await createWorld();
+  world.cloud.deviceList.deviceList.push(ULTRA_MAX);
+  const { data } = await world.gladys.fake.action('device_diagnostics');
+  assert.match(data.message.en, /\n\n#1 Smart Lock Pro \(supported\)/);
+  assert.match(data.message.en, /Smart Lock Ultra Max \(supported\)/);
+});
+
 test('the raw status of every device, read only, nothing private', async () => {
   const world = await createWorld();
   world.cloud.deviceList.deviceList.unshift(ULTRA_MAX);
@@ -67,7 +94,7 @@ test('the raw status of every device, read only, nothing private', async () => {
   assert.equal(world.cloud.count('status'), statuses + MAX_DEVICES);
   assert.equal(world.cloud.count('command'), commands);
   assert.match(message.en, new RegExp(`^${MAX_DEVICES} of ${total} SwitchBot device`));
-  assert.match(message.en, /#1 Smart Lock Ultra Max \(supported\)/);
+  assert.match(message.en, /\n\n#1 Smart Lock Ultra Max \(supported\)/);
   assert.match(message.en, /"lockState":"latchBoltLocked","doorState":"close"/);
   assert.match(message.en, /status: the SwitchBot hub is offline|status: the device is offline/);
   assert.match(message.fr, /Identifiants masqués/);

@@ -131,13 +131,15 @@ bloquear y desbloquear desde Gladys (panel, escenas, asistentes de voz vinculado
 Descubrir). Piense en quién y qué puede alcanzar esos comandos.
 
 Con la opción, Lock, Lock Pro, Lock Ultra y Lock Ultra Max tienen también un botón **Desbloquear
-solo el cerrojo**: el cerrojo se retrae pero el pestillo se queda, y la puerta sigue cerrada hasta
+solo el cerrojo** (comando `deadbolt`, no comprobado en el hardware): según SwitchBot, el
+cerrojo se retrae pero el pestillo se queda, y la puerta sigue cerrada hasta
 que se baja la manilla (el comando `unlock` retrae también el pestillo y la puerta se entreabre).
 Una cerradura añadida antes de la versión 1.1 lo recibe con **Actualizar** en la pestaña Descubrir.
 
-Una cerradura con el cerrojo retraído y solo el pestillo sujetando la puerta (`latchBoltLocked`
+En una Lock Ultra o Ultra Max, una cerradura con el cerrojo retraído y solo el pestillo sujetando la puerta (`latchBoltLocked`
 para SwitchBot, el estado habitual de una Lock Ultra desbloqueada) se lee **desbloqueada**:
-cualquiera puede abrir con la manilla.
+cualquiera puede abrir con la manilla. Los demás modelos la siguen leyendo
+bloqueada mientras un diagnóstico no muestre lo contrario.
 
 ### Mandos IR
 

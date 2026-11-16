@@ -156,6 +156,18 @@ test('a Lock Ultra Max: every documented lock state, any case, and its door', ()
     assert.equal(read('locked', doorState).door, door, doorState);
   }
   assert.equal(read('locked').battery, 90);
+  // Elsewhere, latchBoltLocked keeps the Home Assistant reading until a
+  // diagnostic shows otherwise.
+  const pro = kindOf('Smart Lock Pro').states(ultraStatus('latchBoltLocked', 'close'), {
+    ...ULTRA_MAX,
+    deviceType: 'Smart Lock Pro',
+  });
+  assert.equal(pro.lock, LOCK_STATE.LOCKED);
+  assert.equal(
+    kind.states(ultraStatus('LATCHBOLTLOCKED'), { ...ULTRA_MAX, deviceType: 'Smart Lock Ultra' })
+      .lock,
+    0,
+  );
   const keys = kind
     .features(ULTRA_MAX, { config: normalizeConfig({ lock_control: true }) })
     .map((f) => f.key);
@@ -176,7 +188,7 @@ test('a Lock Ultra Max: every documented lock state, any case, and its door', ()
   assert.deepEqual(command('deadbolt', 1).commands, [{ command: 'deadbolt' }]);
 });
 
-test('no deadbolt button where the API does not document it', () => {
+test('no deadbolt button on the Lite (left out by Home Assistant) nor the Vision models', () => {
   const config = normalizeConfig({ lock_control: true });
   for (const deviceType of ['Smart Lock Lite', 'Smart Lock Vision', 'Lock Vision Pro']) {
     const device = { ...ULTRA_MAX, deviceType };

@@ -194,7 +194,10 @@ export function buildOverview(hub, { language } = {}) {
 
   const locks = entries.filter((e) => e.kind.kind === 'lock');
   if (locks.length > 0) {
-    const states = locks.map((e) => [e, readLockState(hub.statuses.get(e.id)?.lockState)]);
+    const states = locks.map((e) => [
+      e,
+      readLockState(hub.statuses.get(e.id)?.lockState, e.raw.deviceType),
+    ]);
     const notLocked = states.filter(
       ([, state]) => state === LOCK_STATE.UNLOCKED || state === LOCK_STATE.ERROR,
     );
