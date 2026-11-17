@@ -107,7 +107,7 @@ test('the keys users store are the published ones (never renamed)', () => {
     'lock_control',
     'language',
   ]);
-  assert.deepEqual(keysOf(manifest.actions), ['check_connection']);
+  assert.deepEqual(keysOf(manifest.actions), ['check_connection', 'device_diagnostics']);
   assert.deepEqual(keysOf(manifest.scene_triggers), [
     'contact_changed',
     'motion_detected',

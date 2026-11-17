@@ -130,6 +130,17 @@ bloquear y desbloquear desde Gladys (panel, escenas, asistentes de voz vinculado
 **Permitir bloquear y desbloquear** y añada la cerradura después (o actualícela desde la pestaña
 Descubrir). Piense en quién y qué puede alcanzar esos comandos.
 
+Con la opción, Lock, Lock Pro, Lock Ultra y Lock Ultra Max tienen también un botón **Desbloquear
+solo el cerrojo** (comando `deadbolt`, no comprobado en el hardware): según SwitchBot, el
+cerrojo se retrae pero el pestillo se queda, y la puerta sigue cerrada hasta
+que se baja la manilla (el comando `unlock` retrae también el pestillo y la puerta se entreabre).
+Una cerradura añadida antes de la versión 1.1 lo recibe con **Actualizar** en la pestaña Descubrir.
+
+En una Lock Ultra o Ultra Max, una cerradura con el cerrojo retraído y solo el pestillo sujetando la puerta (`latchBoltLocked`
+para SwitchBot, el estado habitual de una Lock Ultra desbloqueada) se lee **desbloqueada**:
+cualquiera puede abrir con la manilla. Los demás modelos la siguen leyendo
+bloqueada mientras un diagnóstico no muestre lo contrario.
+
 ### Mandos IR
 
 Con la opción **Mandos IR**, cada mando virtual de sus hubs (TV, aire acondicionado, ventilador,
@@ -194,6 +205,10 @@ Plus para el movimiento.
 
 ## Solución de problemas
 
+- **Un dispositivo muestra un valor erróneo**: el botón **Diagnóstico de los dispositivos** de la
+  pantalla de configuración muestra el estado bruto que SwitchBot devuelve para cada dispositivo
+  (identificadores ocultos, nombres omitidos, una llamada a la API por dispositivo, 20 dispositivos
+  como máximo). Péguelo en el foro con lo que el dispositivo muestra realmente.
 - **«SwitchBot rechaza las credenciales»**: compruebe el token y la clave secreta (cópielos de
   nuevo desde la aplicación; un nuevo token invalida el anterior). La misma respuesta llega cuando
   se ha agotado la cuota diaria: espere a medianoche y alargue el intervalo si comparte el token

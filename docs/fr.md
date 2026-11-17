@@ -135,6 +135,18 @@ verrouiller et déverrouiller depuis Gladys (tableau de bord, scènes, assistant
 Gladys), activez **Autoriser verrouillage et déverrouillage**, puis ajoutez la serrure (ou mettez-la
 à jour depuis l'onglet Découverte). Pensez à qui et à quoi peut atteindre ces commandes.
 
+Avec l'option, les Lock, Lock Pro, Lock Ultra et Lock Ultra Max ont aussi un bouton **Déverrouiller
+le pêne dormant seul** (commande `deadbolt`, non vérifiée sur le matériel) : d'après
+SwitchBot, le pêne dormant rentre mais le pêne demi-tour reste, la porte reste fermée
+jusqu'à ce qu'on abaisse la poignée (la commande `unlock` tire aussi le demi-tour, et la porte
+s'entrouvre). Une serrure ajoutée avant la version 1.1 le reçoit par **Mettre à jour** dans l'onglet
+Découverte.
+
+Sur une Lock Ultra ou Ultra Max, une serrure dont le pêne dormant est rentré et dont seul le demi-tour retient la porte
+(`latchBoltLocked` pour SwitchBot, l'état habituel d'une Lock Ultra déverrouillée) se lit
+**déverrouillée** : n'importe qui ouvre avec la poignée. Les autres modèles le lisent encore
+verrouillé, en attendant un diagnostic qui dise le contraire.
+
 ### Télécommandes IR
 
 Avec l'option **Télécommandes IR**, chaque télécommande virtuelle de vos hubs (TV, climatiseur,
@@ -200,6 +212,10 @@ l'option Gladys Plus pour le mouvement.
 
 ## Dépannage
 
+- **Un appareil affiche une valeur fausse** : le bouton **Diagnostic des appareils** de l'écran de
+  configuration affiche le statut brut renvoyé par SwitchBot pour chaque appareil (identifiants
+  masqués, noms retirés, un appel d'API par appareil, 20 appareils au plus). Collez-le sur le forum
+  avec ce que l'appareil montre vraiment.
 - **« SwitchBot refuse les identifiants »** : vérifiez le jeton et la clé secrète (recopiez-les
   depuis l'application ; un nouveau jeton invalide l'ancien). La même réponse arrive quand le quota
   du jour est épuisé : attendez minuit, et allongez l'intervalle si vous partagez le jeton avec une
