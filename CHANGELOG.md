@@ -10,6 +10,8 @@ the notes of the version's GitHub Release.
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-11-17
+
 ### Fixed
 
 - Lock Ultra and Ultra Max: the `latchBoltLocked` state (deadbolt retracted, the latch alone
@@ -56,5 +58,6 @@ the notes of the version's GitHub Release.
 - Texts in English, French, German and Spanish, and the documentation in the
   four languages.
 
-[Unreleased]: https://github.com/guim31/gladys-switchbot/compare/v1.0.1...HEAD
+[Unreleased]: https://github.com/guim31/gladys-switchbot/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/guim31/gladys-switchbot/compare/v1.0.1...v1.1.0
 [1.0.1]: https://github.com/guim31/gladys-switchbot/releases/tag/v1.0.1
