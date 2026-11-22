@@ -169,3 +169,13 @@ test('an IR remote power button sends the standard command', async () => {
     ['last-command'],
   );
 });
+
+test('a device error is never retried on a non-idempotent command (deadbolt)', async () => {
+  const on = await createWorld({ config: { lock_control: true } });
+  const id = 'F0000000000B';
+  on.cloud.statuses[id].lockState = 'lock';
+  on.cloud.commandItemCodes.push(190);
+  const ack = await on.gladys.fake.setValue(on.discovered(id), on.feature(id, 'deadbolt'), 1);
+  assert.equal(ack.success, false);
+  assert.equal(on.cloud.count('command'), 1);
+});

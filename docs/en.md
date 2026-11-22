@@ -132,14 +132,14 @@ On a Lock Ultra or Ultra Max, a lock whose deadbolt is retracted while the latch
 the usual state of a Lock Ultra once unlocked) reads **unlocked**: anyone can open with the handle. The other models keep reading
 it locked until a diagnostic shows otherwise.
 
-Labels (version 1.2): **Lock / unlock** is the command (the dashboard switch sends the action
+Labels (since the version after 1.1.0): **Lock / unlock** is the command (the dashboard switch sends the action
 you choose), **Lock state** tells whether the lock is locked, and **Door state** only tells
 whether the door is open or closed: a "Closed" door may be unlocked. Names are set when the device
 is added to Gladys: a lock added earlier keeps its old names (rename the features in Gladys if you
 wish), with nothing lost, identifiers do not change.
 
 The **Unlock the deadbolt only** button works from a locked lock only: it does not lock again. If
-the lock already reads unlocked, it is refused (red message), since a Lock Ultra Max tried to lock
+the lock already reads unlocked, it is refused (red message, from a read made just before), since a Lock Ultra Max tried to lock
 in that case. When SwitchBot answers that a lock command failed on the lock (error 190, often
 "states not synchronized"), the integration sends it once more after 3 seconds, then shows the
 failure in red.

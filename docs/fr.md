@@ -147,7 +147,7 @@ Sur une Lock Ultra ou Ultra Max, une serrure dont le pêne dormant est rentré e
 **déverrouillée** : n'importe qui ouvre avec la poignée. Les autres modèles le lisent encore
 verrouillé, en attendant un diagnostic qui dise le contraire.
 
-Libellés (version 1.2) : **Verrouiller / déverrouiller** est la commande (l'interrupteur du
+Libellés (depuis la version qui suit la 1.1.0) : **Verrouiller / déverrouiller** est la commande (l'interrupteur du
 tableau de bord envoie l'action choisie), **État de la serrure** dit si elle est verrouillée, et
 **État de la porte** dit seulement si la porte est ouverte ou fermée : une porte « Fermée » peut
 être déverrouillée. Les noms sont figés quand l'appareil est ajouté dans Gladys : une serrure déjà
@@ -155,7 +155,7 @@ ajoutée garde les anciens noms (renommez les fonctionnalités dans Gladys si vo
 sans rien perdre, les identifiants ne changent pas.
 
 Le bouton **Déverrouiller le pêne dormant** ne sert qu'à partir d'une serrure verrouillée : il ne
-reverrouille pas. Si la serrure est déjà lue déverrouillée, il est refusé (message en rouge), car
+reverrouille pas. Si la serrure est déjà lue déverrouillée, il est refusé (message en rouge, d'après une lecture faite juste avant), car
 une Lock Ultra Max a tenté de se verrouiller dans ce cas. Quand SwitchBot répond qu'une commande
 de verrouillage n'a pas abouti sur la serrure (erreur 190, souvent « état non synchronisé »),
 l'intégration la renvoie une fois après 3 secondes, puis affiche l'échec en rouge.

@@ -141,7 +141,7 @@ SwitchBot, der übliche Zustand eines entriegelten Lock Ultra), als **entriegelt
 mit der Klinke öffnen. Die anderen Modelle lesen diesen Zustand weiter als verriegelt, bis eine Diagnose
 etwas anderes zeigt.
 
-Bezeichnungen (Version 1.2): **Verriegeln / entriegeln** ist der Befehl (der Schalter im
+Bezeichnungen (seit der Version nach 1.1.0): **Verriegeln / entriegeln** ist der Befehl (der Schalter im
 Dashboard sendet die gewählte Aktion), **Schlossstatus** zeigt, ob das Schloss verriegelt ist, und
 **Türstatus** zeigt nur, ob die Tür offen oder geschlossen ist: Eine „geschlossene“ Tür kann
 entriegelt sein. Namen werden beim Hinzufügen zu Gladys festgelegt: Ein früher hinzugefügtes
@@ -149,7 +149,7 @@ Schloss behält die alten Namen (du kannst die Funktionen in Gladys umbenennen),
 Kennungen ändern sich nicht.
 
 Der Knopf **Nur den Riegel entriegeln** wirkt nur bei einem verriegelten Schloss: Er verriegelt
-nicht wieder. Ist das Schloss schon als entriegelt gelesen, wird er abgelehnt (rote Meldung), denn
+nicht wieder. Ist das Schloss schon als entriegelt gelesen, wird er abgelehnt (rote Meldung, nach einer Abfrage direkt davor), denn
 ein Lock Ultra Max hat in diesem Fall versucht zu verriegeln. Meldet SwitchBot, dass ein
 Verriegelungsbefehl am Schloss gescheitert ist (Fehler 190, oft „Status nicht synchronisiert“),
 sendet die Integration ihn nach 3 Sekunden noch einmal und zeigt dann den Fehler rot an.

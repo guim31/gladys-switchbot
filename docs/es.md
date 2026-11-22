@@ -141,7 +141,7 @@ para SwitchBot, el estado habitual de una Lock Ultra desbloqueada) se lee **desb
 cualquiera puede abrir con la manilla. Los demás modelos la siguen leyendo
 bloqueada mientras un diagnóstico no muestre lo contrario.
 
-Etiquetas (versión 1.2): **Bloquear / desbloquear** es el comando (el interruptor del panel envía
+Etiquetas (desde la versión posterior a la 1.1.0): **Bloquear / desbloquear** es el comando (el interruptor del panel envía
 la acción elegida), **Estado de la cerradura** indica si está bloqueada, y **Estado de la puerta**
 solo indica si la puerta está abierta o cerrada: una puerta «Cerrada» puede estar desbloqueada.
 Los nombres se fijan al añadir el dispositivo a Gladys: una cerradura añadida antes conserva los
@@ -149,7 +149,7 @@ nombres antiguos (puede renombrar las funciones en Gladys), sin perder nada, los
 cambian.
 
 El botón **Desbloquear solo el cerrojo** solo sirve desde una cerradura bloqueada: no vuelve a
-bloquear. Si la cerradura ya se lee desbloqueada, se rechaza (mensaje en rojo), porque una Lock
+bloquear. Si la cerradura ya se lee desbloqueada, se rechaza (mensaje en rojo, según una lectura hecha justo antes), porque una Lock
 Ultra Max intentó bloquearse en ese caso. Cuando SwitchBot responde que un comando de bloqueo ha
 fallado en la cerradura (error 190, a menudo «estado no sincronizado»), la integración lo reenvía
 una vez tras 3 segundos y luego muestra el fallo en rojo.

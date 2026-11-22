@@ -513,6 +513,11 @@ export class SwitchBotHub {
       throw new Error('unknown SwitchBot device (search again in the Discovery tab)');
     }
     const key = featureKeyOf(this.gladys, entry, feature.external_id);
+    if (key === 'deadbolt' && entry.kind.kind === 'lock') {
+      // The deadbolt button is refused on an unlocked lock: decide on a fresh
+      // read, not on a status that may predate a lock by hand or keypad.
+      await this.poller.pollNow(entry);
+    }
     const plan = entry.kind.command?.({
       key,
       value,

@@ -31,21 +31,34 @@ export const MAX_DEVICES = 20;
 
 const ID_KEY = /(id|ids|mac)$/i;
 const DROPPED_KEY = /(name|password|passcode|secret|token|^iv|^keylist)$/i;
-const CREDENTIAL_KEY = /(token|signature|^sign$|credential|apikey|api_key|key$|auth|session)/i;
+const CREDENTIAL_KEY =
+  /(token|signature|^sign$|credential|api_?key|secret|^auth(orization)?$|^session(id|token)?$|(^|_)key$)/i;
 const URL_PATTERN = /\b[a-z][a-z0-9+.-]*:\/\/[^\s"'<>]+/gi;
-const TOKEN_LIKE = /^[A-Za-z0-9+/=_.%-]{32,}$/;
+// A host followed by a path or a query, without a scheme (`bucket.s3.amazonaws.com/a.jpg?...`).
+const BARE_URL_PATTERN = /\b((?:[a-z0-9-]+\.)+[a-z]{2,})(?::\d+)?[/?][^\s"'<>]*/gi;
+const CREDENTIAL_PAIR =
+  /([\w.-]*(?:token|signature|credential|key|auth|secret|sign)[\w.-]*)=[^&\s"']+/gi;
+// No dot (a long host name stays), at least one digit (a long word stays).
+const TOKEN_LIKE = /(?=[A-Za-z0-9+/=_%-]*\d)[A-Za-z0-9+/=_%-]{32,}/g;
 export const MASKED = '<masked>';
 
-/** Keeps the host of every URL in a string; masks a string that looks like a token. */
+/**
+ * Keeps the host of every URL in a string, masks credential `name=value`
+ * pairs and every word that looks like a token (32 characters or more of
+ * letters, digits and base64 or URL signs).
+ */
 export function scrubString(value) {
-  const withoutUrls = value.replace(URL_PATTERN, (url) => {
-    try {
-      return `<url ${new URL(url).host}>`;
-    } catch {
-      return '<url>';
-    }
-  });
-  return TOKEN_LIKE.test(withoutUrls) ? MASKED : withoutUrls;
+  return value
+    .replace(URL_PATTERN, (url) => {
+      try {
+        return `<url ${new URL(url).host}>`;
+      } catch {
+        return '<url>';
+      }
+    })
+    .replace(BARE_URL_PATTERN, (_, host) => `<url ${host}>`)
+    .replace(CREDENTIAL_PAIR, (_, name) => `${name}=${MASKED}`)
+    .replace(TOKEN_LIKE, MASKED);
 }
 
 /** Gladys shows a returned message in green, a thrown one in red. */
@@ -103,7 +116,7 @@ export function maskIds(value, aliases = new Map(), key = '') {
     const masked = {};
     for (const [k, v] of Object.entries(value)) {
       if (!DROPPED_KEY.test(k)) {
-        masked[k] = maskIds(v, aliases, k);
+        masked[scrubString(k)] = maskIds(v, aliases, k);
       }
     }
     return masked;
@@ -120,7 +133,9 @@ export function maskIds(value, aliases = new Map(), key = '') {
     }
     return aliases.get(id);
   }
-  if (CREDENTIAL_KEY.test(key) && value !== null && value !== '' && typeof value !== 'boolean') {
+  // `(^|_)key$` misses camelCase: `sessionKey`, `accessKey`.
+  const credential = CREDENTIAL_KEY.test(key) || /[a-z]Key$/.test(key);
+  if (credential && typeof value === 'string' && value !== '') {
     return MASKED;
   }
   return typeof value === 'string' ? scrubString(value) : value;
@@ -170,7 +185,7 @@ export async function deviceDiagnostics(hub) {
         if (err?.code === 'auth') {
           throw new ActionFailure(TEXT.authFailed);
         }
-        lastError = err?.message ?? String(err);
+        lastError = scrubString(err?.message ?? String(err));
         block.error = lastError;
       }
     }

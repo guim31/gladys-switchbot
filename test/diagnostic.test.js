@@ -54,11 +54,17 @@ test('a camera: a presigned image link keeps only its host, tokens masked at any
     latestImage: { imageUrl: link, expireAt: 1795302317 },
     nested: [{ deep: { note: `see ${link} now` } }],
     accessToken: 'abc',
-    sessionKey: 42,
+    sessionKey: 'abc',
+    authMode: 'fingerprint',
+    sessionCount: 3,
+    [`${link}`]: 1,
+    bare: link.replace('https://', ''),
+    query: 'X-Amz-Security-Token=short&X-Amz-Signature=abc&size=2',
+    sentence: 'token IQoJb3JpZ2luX2VjEXAMPLEtokenEXAMPLEtokenEXAMPLE here',
     blob: 'dGhpcyBpcyBhIHZlcnkgbG9uZyB0b2tlbi1saWtlIHN0cmluZw==',
   });
   const text = JSON.stringify(masked);
-  for (const leak of ['X-Amz', 'Signature', 'IQoJ', 'AKIA', 'latest.jpg', 'F000000000F5']) {
+  for (const leak of ['Signature=0123', 'AWS4', 'IQoJ', 'AKIA', 'latest.jpg', 'F000000000F5']) {
     assert.ok(!text.includes(leak), `${leak} leaked`);
   }
   assert.equal(masked.latestImage.imageUrl, '<url example-bucket.s3.eu-west-1.amazonaws.com>');
@@ -70,6 +76,12 @@ test('a camera: a presigned image link keeps only its host, tokens masked at any
   assert.equal(masked.accessToken, undefined);
   assert.equal(masked.sessionKey, MASKED);
   assert.equal(masked.blob, MASKED);
+  assert.equal(masked.authMode, 'fingerprint');
+  assert.equal(masked.sessionCount, 3);
+  assert.equal(masked.bare, '<url example-bucket.s3.eu-west-1.amazonaws.com>');
+  assert.equal(masked.query, `X-Amz-Security-Token=${MASKED}&X-Amz-Signature=${MASKED}&size=2`);
+  assert.equal(masked.sentence, `token ${MASKED} here`);
+  assert.ok('<url example-bucket.s3.eu-west-1.amazonaws.com>' in masked);
   // Ordinary values are left alone.
   assert.equal(scrubString('255:97:0'), '255:97:0');
   assert.equal(scrubString('V0.9-0.9'), 'V0.9-0.9');

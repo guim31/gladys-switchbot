@@ -20,14 +20,14 @@ the notes of the version's GitHub Release.
 
 - Locks: a command the cloud accepts but the lock refuses (an item code other than 100, such as 190) is now an error, shown in red, instead of a silent success. Lock and unlock are sent once
   more after 3 seconds on such a device error.
-- Locks: the "deadbolt only" button is refused when the lock already reads unlocked; sent then, it
-  made a Lock Ultra Max try to lock.
+- Locks: the "deadbolt only" button reads the lock first and is refused when it is already
+  unlocked; sent then, it made a Lock Ultra Max try to lock.
 
 ### Changed
 
-- Lock feature names tell actions from states: "Lock / unlock" (command), "Lock state", "Door
-  state", "Unlock the deadbolt". Names are set when a device is added: a lock added earlier keeps
-  its names and identifiers.
+- Lock feature names tell actions from states: "Lock / unlock" (command) and "Door state" (the
+  French deadbolt button also loses "seul"). Names are set when a device is added: a lock added
+  earlier keeps its names and identifiers.
 
 ## [1.1.0] - 2026-11-17
 
