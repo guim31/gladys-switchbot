@@ -10,6 +10,8 @@ the notes of the version's GitHub Release.
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-11-22
+
 ### Security
 
 - Device diagnostics: every link in a raw status now keeps only its host, and values that look
@@ -77,6 +79,7 @@ the notes of the version's GitHub Release.
 - Texts in English, French, German and Spanish, and the documentation in the
   four languages.
 
-[Unreleased]: https://github.com/guim31/gladys-switchbot/compare/v1.1.0...HEAD
+[Unreleased]: https://github.com/guim31/gladys-switchbot/compare/v1.2.0...HEAD
+[1.2.0]: https://github.com/guim31/gladys-switchbot/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/guim31/gladys-switchbot/compare/v1.0.1...v1.1.0
 [1.0.1]: https://github.com/guim31/gladys-switchbot/releases/tag/v1.0.1
