@@ -86,7 +86,9 @@ test('a lock is controllable only with the option on', () => {
   assert.equal(commandOf(pro, 'deadbolt', 1, { config: normalizeConfig() }), null);
   assert.deepEqual(commandOf(pro, 'lock', 1).commands, [{ command: 'lock' }]);
   assert.deepEqual(commandOf(pro, 'lock', 0).commands, [{ command: 'unlock' }]);
-  assert.deepEqual(commandOf(pro, 'deadbolt', 1), {
+  assert.throws(() => commandOf(pro, 'deadbolt', 1), /already reads unlocked/);
+  const locked = { status: { ...STATUSES[pro], lockState: 'lock' } };
+  assert.deepEqual(commandOf(pro, 'deadbolt', 1, locked), {
     commands: [{ command: 'deadbolt' }],
     expected: { lock: 0 },
   });
@@ -180,10 +182,15 @@ test('a Lock Ultra Max: every documented lock state, any case, and its door', ()
       status: ultraStatus('locked', 'close'),
       config: normalizeConfig({ lock_control: true }),
     });
-  assert.deepEqual(command('lock', 1), { commands: [{ command: 'lock' }], expected: { lock: 1 } });
+  assert.deepEqual(command('lock', 1), {
+    commands: [{ command: 'lock' }],
+    expected: { lock: 1 },
+    retryDeviceError: true,
+  });
   assert.deepEqual(command('lock', 0), {
     commands: [{ command: 'unlock' }],
     expected: { lock: 0 },
+    retryDeviceError: true,
   });
   assert.deepEqual(command('deadbolt', 1).commands, [{ command: 'deadbolt' }]);
 });

@@ -132,6 +132,18 @@ On a Lock Ultra or Ultra Max, a lock whose deadbolt is retracted while the latch
 the usual state of a Lock Ultra once unlocked) reads **unlocked**: anyone can open with the handle. The other models keep reading
 it locked until a diagnostic shows otherwise.
 
+Labels (since the version after 1.1.0): **Lock / unlock** is the command (the dashboard switch sends the action
+you choose), **Lock state** tells whether the lock is locked, and **Door state** only tells
+whether the door is open or closed: a "Closed" door may be unlocked. Names are set when the device
+is added to Gladys: a lock added earlier keeps its old names (rename the features in Gladys if you
+wish), with nothing lost, identifiers do not change.
+
+The **Unlock the deadbolt only** button works from a locked lock only: it does not lock again. If
+the lock already reads unlocked, it is refused (red message, from a read made just before), since a Lock Ultra Max tried to lock
+in that case. When SwitchBot answers that a lock command failed on the lock (error 190, often
+"states not synchronized"), the integration sends it once more after 3 seconds, then shows the
+failure in red.
+
 ### IR remotes
 
 With the **IR remotes** option, every virtual remote of your hubs (TV, air conditioner, fan,
@@ -195,7 +207,7 @@ interval (a short motion) can go unnoticed: use the Gladys Plus option for motio
 
 - **A device reads a wrong value**: the **Device diagnostics** button of the Configuration
   screen shows the raw status SwitchBot returns for each device (identifiers masked, names left
-  out, one API call per device, 20 devices at most). Paste it on the forum with what the device
+  out, links cut down to their host and tokens masked, one API call per device, 20 devices at most). Paste it on the forum with what the device
   really shows.
 - **"SwitchBot refused the credentials"**: check the token and the secret key (copy them again from
   the app; a new token invalidates the old one). The same answer comes when the daily quota is

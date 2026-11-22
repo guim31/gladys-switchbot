@@ -102,15 +102,26 @@ export function createClient({
     } catch {
       throw new SwitchBotError('http', 'SwitchBot answered something that is not JSON');
     }
-    const statusCode = payload?.statusCode;
+    let statusCode = payload?.statusCode;
+    let message = payload?.message;
     if (statusCode === 100) {
-      return payload.body ?? {};
+      // A command relayed by a hub can be accepted as a request (100) and
+      // still fail on the device: the result is then in `body.items[].code`
+      // (Home Assistant's switchbot_api reads it too). Only a 100 there, or
+      // no item at all, is a success.
+      const items = Array.isArray(payload.body?.items) ? payload.body.items : [];
+      const failed = items.find((item) => item?.code !== undefined && item.code !== 100);
+      if (!failed) {
+        return payload.body ?? {};
+      }
+      statusCode = failed.code;
+      message = failed.message;
     }
     if (statusCode === 161 || statusCode === 171) {
       throw new SwitchBotOfflineError(statusCode);
     }
     // Messages come from SwitchBot and never echo the credentials.
-    const detail = typeof payload?.message === 'string' ? payload.message.slice(0, 120) : '';
+    const detail = typeof message === 'string' ? message.slice(0, 120) : '';
     const codes = { 151: 'device_type', 152: 'not_found', 160: 'unsupported', 190: 'device' };
     throw new SwitchBotError(
       codes[statusCode] ?? 'api',

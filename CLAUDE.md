@@ -301,6 +301,16 @@ long, et sur un « Sie »/« Ihr… » de politesse en allemand. Le store exige 
   seul) documentée pour Lock, Pro, Pro Wifi, Ultra, Ultra Max : bouton `button/push` sous la même
   option. Statut réel d'une Ultra Max jamais vu : l'action « Diagnostic des appareils »
   (`src/diagnostic.js`) sert à le récupérer ; elle retire noms et `keyList` des claviers (codes).
+- **Réponse d'une commande** (22/11/2026, Ultra Max de pjrlyon : verrouillage « au 2e ou 3e
+  essai ») : un `statusCode` 100 peut cacher un refus de l'appareil dans `body.items[].code`
+  (190 « device states not synchronized with server ») ; `client.js` le lève. `lock`/`unlock`
+  (idempotents) sont renvoyés **une fois** après 3 s sur une erreur 190 (`retryDeviceError`), jamais
+  `press`, `toggle` ni `deadbolt`. Cause exacte non vérifiée sans la serrure.
+- `deadbolt` envoyé à une serrure **déjà déverrouillée** a fait tenter un verrouillage à l'Ultra
+  Max : refusé quand le dernier statut lu est déverrouillé.
+- **Diagnostic** : le statut d'une caméra (`Outdoor PTC 3K`) contient `latestImage.imageUrl`, une
+  URL S3 présignée avec jeton (valable ~10 min). Toute URL est réduite à son hôte, toute valeur
+  « jeton » masquée, à toute profondeur (`scrubString`).
 - Messages d'action : un échec est **levé** (`ActionFailure`, rouge), seul un succès est renvoyé.
 - Au (re)démarrage, seuls 10 appareils sont lus d'un coup (`RESTART_BURST`), les autres par les
   ticks suivants (2 toutes les 5 s) : une rafale complète sur un grand parc dépasserait les 300

@@ -30,6 +30,8 @@ export function createFakeSwitchBot({ token = TOKEN, secret = SECRET } = {}) {
     commands: [],
     webhookUrls: [],
     offline: new Set(),
+    /** Item codes the next commands get back with a statusCode 100 (190: refused by the device). */
+    commandItemCodes: [],
     refuseAll: false,
     down: false,
 
@@ -79,6 +81,10 @@ export function createFakeSwitchBot({ token = TOKEN, secret = SECRET } = {}) {
         record('command', { id });
         if (cloud.offline.has(id)) {
           return json(200, { statusCode: 161, body: {}, message: 'device offline' });
+        }
+        const itemCode = cloud.commandItemCodes.shift();
+        if (itemCode !== undefined && itemCode !== 100) {
+          return ok({ items: [{ deviceID: id, code: itemCode, status: {}, message: 'refused' }] });
         }
         cloud.commands.push({ id, ...body });
         return ok({});

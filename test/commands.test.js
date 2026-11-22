@@ -111,13 +111,39 @@ test('the deadbolt button retracts the deadbolt only, and needs the option', asy
   assert.equal(deadbolt.category, 'button');
   assert.equal(deadbolt.type, 'push');
   assert.equal(deadbolt.read_only, false);
+  // The fixture lock reads unlocked: the deadbolt is already retracted, and
+  // `deadbolt` sent then made an Ultra Max try to lock. Refused, in red.
+  const already = await on.gladys.fake.setValue(on.discovered(id), deadbolt, 1);
+  assert.equal(already.success, false);
+  assert.equal(on.cloud.count('command'), 0);
+  // Locked (read again after a lock command): the deadbolt retracts.
+  await on.gladys.fake.setValue(on.discovered(id), on.feature(id, 'lock'), 1);
+  on.cloud.statuses[id].lockState = 'lock';
+  await on.runDelayed();
   const ack = await on.gladys.fake.setValue(on.discovered(id), deadbolt, 1);
   assert.equal(ack.success, true);
   assert.equal(on.cloud.commands.at(-1).command, 'deadbolt');
   await on.gladys.fake.configUpdated({ ...on.gladys.fake.config, lock_control: false });
   const refused = await on.gladys.fake.setValue(on.discovered(id), deadbolt, 1);
   assert.equal(refused.success, false);
-  assert.equal(on.cloud.count('command'), 1);
+  assert.equal(on.cloud.count('command'), 2);
+});
+
+test('a lock command refused with a device error (190) is sent once more, then fails in red', async () => {
+  const on = await createWorld({ config: { lock_control: true } });
+  const id = 'F0000000000B';
+  const lockFeature = on.feature(id, 'lock');
+  // Accepted as a request, refused by the lock: the result is in the items.
+  on.cloud.commandItemCodes.push(190);
+  const ack = await on.gladys.fake.setValue(on.discovered(id), lockFeature, 1);
+  assert.equal(ack.success, true);
+  assert.equal(on.cloud.count('command'), 2);
+
+  on.cloud.commandItemCodes.push(190, 190);
+  const failed = await on.gladys.fake.setValue(on.discovered(id), lockFeature, 1);
+  assert.equal(failed.success, false);
+  assert.match(String(failed.error?.en ?? failed.error), /190/);
+  assert.equal(on.cloud.count('command'), 4);
 });
 
 test('an IR remote power button sends the standard command', async () => {
@@ -142,4 +168,14 @@ test('an IR remote power button sends the standard command', async () => {
     others.features.map((f) => f.external_id.split(':').pop()),
     ['last-command'],
   );
+});
+
+test('a device error is never retried on a non-idempotent command (deadbolt)', async () => {
+  const on = await createWorld({ config: { lock_control: true } });
+  const id = 'F0000000000B';
+  on.cloud.statuses[id].lockState = 'lock';
+  on.cloud.commandItemCodes.push(190);
+  const ack = await on.gladys.fake.setValue(on.discovered(id), on.feature(id, 'deadbolt'), 1);
+  assert.equal(ack.success, false);
+  assert.equal(on.cloud.count('command'), 1);
 });
