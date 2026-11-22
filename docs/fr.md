@@ -147,6 +147,19 @@ Sur une Lock Ultra ou Ultra Max, une serrure dont le pêne dormant est rentré e
 **déverrouillée** : n'importe qui ouvre avec la poignée. Les autres modèles le lisent encore
 verrouillé, en attendant un diagnostic qui dise le contraire.
 
+Libellés (version 1.2) : **Verrouiller / déverrouiller** est la commande (l'interrupteur du
+tableau de bord envoie l'action choisie), **État de la serrure** dit si elle est verrouillée, et
+**État de la porte** dit seulement si la porte est ouverte ou fermée : une porte « Fermée » peut
+être déverrouillée. Les noms sont figés quand l'appareil est ajouté dans Gladys : une serrure déjà
+ajoutée garde les anciens noms (renommez les fonctionnalités dans Gladys si vous le souhaitez),
+sans rien perdre, les identifiants ne changent pas.
+
+Le bouton **Déverrouiller le pêne dormant** ne sert qu'à partir d'une serrure verrouillée : il ne
+reverrouille pas. Si la serrure est déjà lue déverrouillée, il est refusé (message en rouge), car
+une Lock Ultra Max a tenté de se verrouiller dans ce cas. Quand SwitchBot répond qu'une commande
+de verrouillage n'a pas abouti sur la serrure (erreur 190, souvent « état non synchronisé »),
+l'intégration la renvoie une fois après 3 secondes, puis affiche l'échec en rouge.
+
 ### Télécommandes IR
 
 Avec l'option **Télécommandes IR**, chaque télécommande virtuelle de vos hubs (TV, climatiseur,
@@ -214,7 +227,7 @@ l'option Gladys Plus pour le mouvement.
 
 - **Un appareil affiche une valeur fausse** : le bouton **Diagnostic des appareils** de l'écran de
   configuration affiche le statut brut renvoyé par SwitchBot pour chaque appareil (identifiants
-  masqués, noms retirés, un appel d'API par appareil, 20 appareils au plus). Collez-le sur le forum
+  masqués, noms retirés, liens réduits à leur hôte et jetons masqués, un appel d'API par appareil, 20 appareils au plus). Collez-le sur le forum
   avec ce que l'appareil montre vraiment.
 - **« SwitchBot refuse les identifiants »** : vérifiez le jeton et la clé secrète (recopiez-les
   depuis l'application ; un nouveau jeton invalide l'ancien). La même réponse arrive quand le quota

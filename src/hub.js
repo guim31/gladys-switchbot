@@ -46,6 +46,10 @@ export const HEARTBEAT_MS = 6 * 3600_000;
 // Read a device again this long after a command, to show its real state.
 export const COMMAND_REFRESH_MS = 5_000;
 export const COVER_REFRESH_MS = 15_000;
+// A lock command refused with a device error (190, often "device states not
+// synchronized with server": the hub had not caught up with the lock yet) is
+// sent once more after this delay.
+export const COMMAND_RETRY_MS = 3_000;
 // Webhook events of one device within this delay are read once.
 export const WEBHOOK_DEBOUNCE_MS = 2_000;
 // Retry delays when the account is unreachable or refuses the credentials.
@@ -68,6 +72,7 @@ export class SwitchBotHub {
    * @param {boolean} [options.timers] run the timers (tests turn them off)
    * @param {() => number} [options.now]
    * @param {(fn: Function, ms: number) => void} [options.later] delayed work (tests run it now)
+   * @param {(ms: number) => Promise<void>} [options.sleep] awaited pause (tests skip it)
    * @param {number} [options.tickMs] poller tick (tests shorten it)
    */
   constructor({
@@ -77,8 +82,11 @@ export class SwitchBotHub {
     timers = true,
     now = () => Date.now(),
     later,
+    sleep,
     tickMs,
   }) {
+    this.sleep =
+      sleep ?? ((ms) => (timers ? new Promise((resolve) => setTimeout(resolve, ms)) : null));
     this.gladys = gladys;
     this.fetch = fetch;
     this.now = now;
@@ -516,7 +524,7 @@ export class SwitchBotHub {
       throw new Error(`${entry.name}: "${key}" cannot be controlled`);
     }
     this.logger.info(`Command ${key} = ${value} to ${entry.name}`);
-    await this.send(entry, plan.commands);
+    await this.send(entry, plan.commands, { retryDeviceError: plan.retryDeviceError });
     const known = new Set(specsOf(entry, this.config).map((spec) => spec.key));
     await this.publishStates(toStates(entryIds(this.gladys, entry), plan.expected, known), entry);
     if (!entry.remote) {
@@ -525,14 +533,29 @@ export class SwitchBotHub {
     }
   }
 
-  /** Send API commands in order; the first failure stops and throws. */
-  async send(entry, commands) {
+  /**
+   * Send API commands in order; the first failure stops and throws. With
+   * `retryDeviceError` (idempotent commands only: lock, unlock), a device
+   * error (190) is retried once after COMMAND_RETRY_MS.
+   */
+  async send(entry, commands, { retryDeviceError = false } = {}) {
     if (!this.client) {
       throw new Error('SwitchBot is not configured');
     }
     for (const command of commands) {
       try {
-        await this.client.sendCommand(entry.id, command);
+        try {
+          await this.client.sendCommand(entry.id, command);
+        } catch (err) {
+          if (!retryDeviceError || err?.code !== 'device') {
+            throw err;
+          }
+          this.logger.info(
+            `${entry.name}: command ${command.command} refused (${err.message}), sent again`,
+          );
+          await this.sleep(COMMAND_RETRY_MS);
+          await this.client.sendCommand(entry.id, command);
+        }
       } catch (err) {
         if (err?.code === 'offline') {
           await this.publishTransport(entry, DEVICE_TRANSPORTS.UNREACHABLE);

@@ -137,15 +137,21 @@ export const lock = {
     };
   },
 
-  command({ key, value, device, config }) {
+  command({ key, value, device, status, config }) {
     // The option may have been turned off after the device was added.
     if (!config.lock_control) {
       return null;
     }
     if (key === 'deadbolt') {
-      return hasDeadbolt(device)
-        ? { commands: [{ command: 'deadbolt' }], expected: { lock: 0 } }
-        : null;
+      if (!hasDeadbolt(device)) {
+        return null;
+      }
+      // Sent to a lock already unlocked, `deadbolt` made an Ultra Max try to
+      // lock (forum, 22/11/2026): it only unlocks, from a locked state.
+      if (readLockState(status?.lockState, device.deviceType) === LOCK_STATE.UNLOCKED) {
+        throw new Error('the lock already reads unlocked (deadbolt retracted): lock it first');
+      }
+      return { commands: [{ command: 'deadbolt' }], expected: { lock: 0 } };
     }
     if (key !== 'lock') {
       return null;
@@ -154,6 +160,7 @@ export const lock = {
     return {
       commands: [{ command: locked ? 'lock' : 'unlock' }],
       expected: { lock: locked ? 1 : 0 },
+      retryDeviceError: true,
     };
   },
 };

@@ -141,6 +141,19 @@ SwitchBot, der übliche Zustand eines entriegelten Lock Ultra), als **entriegelt
 mit der Klinke öffnen. Die anderen Modelle lesen diesen Zustand weiter als verriegelt, bis eine Diagnose
 etwas anderes zeigt.
 
+Bezeichnungen (Version 1.2): **Verriegeln / entriegeln** ist der Befehl (der Schalter im
+Dashboard sendet die gewählte Aktion), **Schlossstatus** zeigt, ob das Schloss verriegelt ist, und
+**Türstatus** zeigt nur, ob die Tür offen oder geschlossen ist: Eine „geschlossene“ Tür kann
+entriegelt sein. Namen werden beim Hinzufügen zu Gladys festgelegt: Ein früher hinzugefügtes
+Schloss behält die alten Namen (du kannst die Funktionen in Gladys umbenennen), ohne Verlust, die
+Kennungen ändern sich nicht.
+
+Der Knopf **Nur den Riegel entriegeln** wirkt nur bei einem verriegelten Schloss: Er verriegelt
+nicht wieder. Ist das Schloss schon als entriegelt gelesen, wird er abgelehnt (rote Meldung), denn
+ein Lock Ultra Max hat in diesem Fall versucht zu verriegeln. Meldet SwitchBot, dass ein
+Verriegelungsbefehl am Schloss gescheitert ist (Fehler 190, oft „Status nicht synchronisiert“),
+sendet die Integration ihn nach 3 Sekunden noch einmal und zeigt dann den Fehler rot an.
+
 ### IR-Fernbedienungen
 
 Mit der Option **IR-Fernbedienungen** wird jede virtuelle Fernbedienung deiner Hubs (TV,
@@ -206,8 +219,8 @@ die Gladys-Plus-Option.
 ## Fehlerbehebung
 
 - **Ein Gerät zeigt einen falschen Wert**: Der Knopf **Gerätediagnose** in der Konfiguration zeigt
-  den Rohstatus, den SwitchBot für jedes Gerät liefert (Kennungen maskiert, Namen weggelassen, ein
-  API-Aufruf pro Gerät, höchstens 20 Geräte). Kopiere ihn ins Forum, zusammen mit dem, was das Gerät
+  den Rohstatus, den SwitchBot für jedes Gerät liefert (Kennungen maskiert, Namen weggelassen,
+  Links auf ihren Host gekürzt, Tokens maskiert, ein API-Aufruf pro Gerät, höchstens 20 Geräte). Kopiere ihn ins Forum, zusammen mit dem, was das Gerät
   wirklich anzeigt.
 - **„SwitchBot lehnt die Zugangsdaten ab“**: Prüfe Token und geheimen Schlüssel (kopiere sie erneut
   aus der App; ein neues Token macht das alte ungültig). Dieselbe Antwort kommt, wenn das

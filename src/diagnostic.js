@@ -11,6 +11,14 @@
 // `keyList` of a Keypad (its passcodes, encrypted, and their owners). The
 // token and the secret only sign the requests: they are never in a response.
 //
+// Some statuses carry links that grant access on their own: a camera returns
+// `latestImage.imageUrl`, a presigned S3 address whose query holds a session
+// token and a signature (forum, 22/11/2026). Every URL found in a string, at
+// any depth and under any key, keeps only its host; any other string that
+// looks like a token (long, no space, mostly letters and digits) and every
+// value of a key naming a credential (`token`, `signature`, `key`...) is
+// replaced by a placeholder.
+//
 // One API call for the list, one per device, at most MAX_DEVICES devices:
 // the locks first, then the types this integration does not know, the
 // devices a diagnostic is usually about.
@@ -23,6 +31,22 @@ export const MAX_DEVICES = 20;
 
 const ID_KEY = /(id|ids|mac)$/i;
 const DROPPED_KEY = /(name|password|passcode|secret|token|^iv|^keylist)$/i;
+const CREDENTIAL_KEY = /(token|signature|^sign$|credential|apikey|api_key|key$|auth|session)/i;
+const URL_PATTERN = /\b[a-z][a-z0-9+.-]*:\/\/[^\s"'<>]+/gi;
+const TOKEN_LIKE = /^[A-Za-z0-9+/=_.%-]{32,}$/;
+export const MASKED = '<masked>';
+
+/** Keeps the host of every URL in a string; masks a string that looks like a token. */
+export function scrubString(value) {
+  const withoutUrls = value.replace(URL_PATTERN, (url) => {
+    try {
+      return `<url ${new URL(url).host}>`;
+    } catch {
+      return '<url>';
+    }
+  });
+  return TOKEN_LIKE.test(withoutUrls) ? MASKED : withoutUrls;
+}
 
 /** Gladys shows a returned message in green, a thrown one in red. */
 export class ActionFailure extends Error {
@@ -96,7 +120,10 @@ export function maskIds(value, aliases = new Map(), key = '') {
     }
     return aliases.get(id);
   }
-  return value;
+  if (CREDENTIAL_KEY.test(key) && value !== null && value !== '' && typeof value !== 'boolean') {
+    return MASKED;
+  }
+  return typeof value === 'string' ? scrubString(value) : value;
 }
 
 /**

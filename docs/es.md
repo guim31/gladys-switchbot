@@ -141,6 +141,19 @@ para SwitchBot, el estado habitual de una Lock Ultra desbloqueada) se lee **desb
 cualquiera puede abrir con la manilla. Los demás modelos la siguen leyendo
 bloqueada mientras un diagnóstico no muestre lo contrario.
 
+Etiquetas (versión 1.2): **Bloquear / desbloquear** es el comando (el interruptor del panel envía
+la acción elegida), **Estado de la cerradura** indica si está bloqueada, y **Estado de la puerta**
+solo indica si la puerta está abierta o cerrada: una puerta «Cerrada» puede estar desbloqueada.
+Los nombres se fijan al añadir el dispositivo a Gladys: una cerradura añadida antes conserva los
+nombres antiguos (puede renombrar las funciones en Gladys), sin perder nada, los identificadores no
+cambian.
+
+El botón **Desbloquear solo el cerrojo** solo sirve desde una cerradura bloqueada: no vuelve a
+bloquear. Si la cerradura ya se lee desbloqueada, se rechaza (mensaje en rojo), porque una Lock
+Ultra Max intentó bloquearse en ese caso. Cuando SwitchBot responde que un comando de bloqueo ha
+fallado en la cerradura (error 190, a menudo «estado no sincronizado»), la integración lo reenvía
+una vez tras 3 segundos y luego muestra el fallo en rojo.
+
 ### Mandos IR
 
 Con la opción **Mandos IR**, cada mando virtual de sus hubs (TV, aire acondicionado, ventilador,
@@ -207,7 +220,7 @@ Plus para el movimiento.
 
 - **Un dispositivo muestra un valor erróneo**: el botón **Diagnóstico de los dispositivos** de la
   pantalla de configuración muestra el estado bruto que SwitchBot devuelve para cada dispositivo
-  (identificadores ocultos, nombres omitidos, una llamada a la API por dispositivo, 20 dispositivos
+  (identificadores ocultos, nombres omitidos, enlaces reducidos a su host y tokens ocultos, una llamada a la API por dispositivo, 20 dispositivos
   como máximo). Péguelo en el foro con lo que el dispositivo muestra realmente.
 - **«SwitchBot rechaza las credenciales»**: compruebe el token y la clave secreta (cópielos de
   nuevo desde la aplicación; un nuevo token invalida el anterior). La misma respuesta llega cuando
