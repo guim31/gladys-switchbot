@@ -10,6 +10,21 @@ the notes of the version's GitHub Release.
 
 ## [Unreleased]
 
+### Fixed
+
+- Commands no longer show "the command failed, the device may be unreachable" when SwitchBot is
+  simply slow to answer: Gladys gives an integration 5 seconds, and a lock relayed by a hub can
+  take longer. The command is acknowledged after 4 seconds at the latest and carries on; a later
+  failure is written to the logs and the device is read again.
+
+### Added
+
+- Locks: 20 seconds after a lock or unlock command SwitchBot accepted, the lock is read again and
+  a warning is logged if it did not move (seen on Lock Ultra models: the cloud answers success, the
+  lock does nothing).
+- Debug logs (`LOG_LEVEL=debug`): the raw SwitchBot answer to every command and how long it took,
+  device ids masked.
+
 ## [1.2.0] - 2026-11-22
 
 ### Security

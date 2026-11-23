@@ -31,6 +31,10 @@
 // on hardware. Documented for the Lock, Pro, Pro Wifi, Ultra and Ultra Max;
 // not for the Vision models, and Home Assistant leaves it out of the Lite:
 // same here.
+//
+// `lock` and `unlock` are sent as documented for every model, Ultra and Ultra
+// Max included (`commandType` "command", parameter "default"), exactly as
+// Home Assistant's switchbot_cloud does: no other form exists in the API.
 // -----------------------------------------------------------------------------
 
 import {
@@ -161,6 +165,11 @@ export const lock = {
       commands: [{ command: locked ? 'lock' : 'unlock' }],
       expected: { lock: locked ? 1 : 0 },
       retryDeviceError: true,
+      // SwitchBot can answer 100 to `lock` while the lock never moves (Ultra
+      // Max; Lock Ultra, home-assistant/core#179738): read
+      // it again later and warn. Not after `deadbolt`, which leaves a Lock
+      // or Pro on `latchBoltLocked`, read as locked on those models.
+      verify: true,
     };
   },
 };
