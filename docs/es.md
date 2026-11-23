@@ -152,7 +152,7 @@ El botón **Desbloquear solo el cerrojo** solo sirve desde una cerradura bloquea
 bloquear. Si la cerradura ya se lee desbloqueada, se rechaza (mensaje en rojo, según una lectura hecha justo antes), porque una Lock
 Ultra Max intentó bloquearse en ese caso. Cuando SwitchBot responde que un comando de bloqueo ha
 fallado en la cerradura (error 190, a menudo «estado no sincronizado»), la integración lo reenvía
-una vez tras 3 segundos y luego muestra el fallo en rojo.
+una vez tras 1,5 segundos y luego muestra el fallo en rojo. Gladys espera 5 segundos una orden: una respuesta posterior no se muestra, y un fallo solo aparece entonces en los registros de la integración.
 
 ### Mandos IR
 

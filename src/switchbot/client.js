@@ -127,8 +127,9 @@ export function createClient({
       codes[statusCode] ?? 'api',
       `SwitchBot error ${statusCode ?? '?'}${detail ? ` (${detail})` : ''}`,
     );
-    // The raw answer, for the debug log of a command (ids masked there).
-    error.response = payload;
+    // The raw answer, for the debug log of a command (ids masked there);
+    // not enumerable, so a logged error object never prints it unmasked.
+    Object.defineProperty(error, 'response', { value: payload });
     throw error;
   }
 

@@ -15,7 +15,8 @@ the notes of the version's GitHub Release.
 - Commands no longer show "the command failed, the device may be unreachable" when SwitchBot is
   simply slow to answer: Gladys gives an integration 5 seconds, and a lock relayed by a hub can
   take longer. The command is acknowledged after 4 seconds at the latest and carries on; a later
-  failure is written to the logs and the device is read again.
+  failure is written to the logs and the device is read again. Lock and unlock are now sent again
+  after 1.5 seconds (was 3) on a device error, so the second answer usually comes back in time.
 
 ### Added
 

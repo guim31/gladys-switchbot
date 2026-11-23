@@ -152,7 +152,7 @@ Der Knopf **Nur den Riegel entriegeln** wirkt nur bei einem verriegelten Schloss
 nicht wieder. Ist das Schloss schon als entriegelt gelesen, wird er abgelehnt (rote Meldung, nach einer Abfrage direkt davor), denn
 ein Lock Ultra Max hat in diesem Fall versucht zu verriegeln. Meldet SwitchBot, dass ein
 Verriegelungsbefehl am Schloss gescheitert ist (Fehler 190, oft „Status nicht synchronisiert“),
-sendet die Integration ihn nach 3 Sekunden noch einmal und zeigt dann den Fehler rot an.
+sendet die Integration ihn nach 1,5 Sekunden noch einmal und zeigt dann den Fehler rot an. Gladys wartet 5 Sekunden auf einen Befehl: Eine spätere Antwort wird nicht angezeigt, ein Fehler steht dann nur in den Protokollen der Integration.
 
 ### IR-Fernbedienungen
 

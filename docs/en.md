@@ -141,8 +141,9 @@ wish), with nothing lost, identifiers do not change.
 The **Unlock the deadbolt only** button works from a locked lock only: it does not lock again. If
 the lock already reads unlocked, it is refused (red message, from a read made just before), since a Lock Ultra Max tried to lock
 in that case. When SwitchBot answers that a lock command failed on the lock (error 190, often
-"states not synchronized"), the integration sends it once more after 3 seconds, then shows the
-failure in red.
+"states not synchronized"), the integration sends it once more after 1.5 seconds, then shows the
+failure in red. Gladys waits 5 seconds for a command: an answer that comes later is not shown, a
+failure then only goes to the integration logs.
 
 ### IR remotes
 

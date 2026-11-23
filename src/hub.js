@@ -49,8 +49,9 @@ export const COMMAND_REFRESH_MS = 5_000;
 export const COVER_REFRESH_MS = 15_000;
 // A lock command refused with a device error (190, often "device states not
 // synchronized with server": the hub had not caught up with the lock yet) is
-// sent once more after this delay.
-export const COMMAND_RETRY_MS = 3_000;
+// sent once more after this delay, short enough for the second answer to
+// come back, most of the time, before the ack deadline below.
+export const COMMAND_RETRY_MS = 1_500;
 // The core fails a command whose ack has not come back within 5 s
 // (COMMAND_TIMEOUT_MS of the core): "the command failed, the device may be
 // unreachable", in red, although nothing failed. A lock command relayed by a
@@ -128,6 +129,8 @@ export class SwitchBotHub {
     this.nextRetryAt = 0;
     /** @type {Map<string, object>} SwitchBot id → catalog entry */
     this.entries = new Map();
+    /** @type {Map<string, number>} SwitchBot id → count of verified commands */
+    this.commandSerials = new Map();
     this.unsupportedTypes = [];
     this.deviceCount = 0;
     this.remoteCount = 0;
@@ -576,7 +579,9 @@ export class SwitchBotHub {
       this.later(() => this.poller.pollNow(entry), delay);
     }
     if (plan.verify) {
-      this.later(() => this.verifyCommand(entry, plan), LOCK_VERIFY_MS);
+      const serial = (this.commandSerials.get(entry.id) ?? 0) + 1;
+      this.commandSerials.set(entry.id, serial);
+      this.later(() => this.verifyCommand(entry, plan, serial), LOCK_VERIFY_MS);
     }
   }
 
@@ -584,10 +589,16 @@ export class SwitchBotHub {
    * Read the device again and warn when it does not show what the accepted
    * command asked for (a value still moving, or unknown, is not a mismatch).
    */
-  async verifyCommand(entry, plan) {
+  async verifyCommand(entry, plan, serial) {
+    // A newer command on the same device has its own check.
+    if (this.commandSerials.get(entry.id) !== serial) {
+      return;
+    }
+    const before = this.statuses.get(entry.id);
     await this.poller.pollNow(entry);
     const status = this.statuses.get(entry.id);
-    if (!status) {
+    // No new status: the read failed, nothing can be concluded.
+    if (!status || status === before) {
       return;
     }
     const read = entry.kind.states(status, entry.raw);
@@ -597,8 +608,8 @@ export class SwitchBotHub {
     if (wrong.length > 0) {
       const names = plan.commands.map((c) => c.command).join(', ');
       this.logger.warn(
-        `${entry.name}: SwitchBot accepted "${names}" but the device still reads otherwise ` +
-          `${LOCK_VERIFY_MS / 1000} s later (it did not move)`,
+        `${entry.name}: SwitchBot accepted "${names}" but the device reads otherwise ` +
+          `${LOCK_VERIFY_MS / 1000} s later (it did not move, or was operated since)`,
       );
     }
   }

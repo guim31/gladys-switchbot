@@ -141,3 +141,22 @@ test('the raw answer of a command goes to the debug log, ids masked', async (t) 
   assert.match(answers[1], /"statusCode":100/);
   assert.ok(!answers.some((line) => line.includes(LOCK)), 'no device id');
 });
+
+test('no "did not move" warning when the check cannot read the lock', async (t) => {
+  const world = await createWorld({ config: { lock_control: true } });
+  const lines = captureLogs(t, 'info');
+  await world.gladys.fake.setValue(world.discovered(LOCK), world.feature(LOCK, 'lock'), 1);
+  world.cloud.offline.add(LOCK);
+  await world.runDelayed();
+  assert.ok(!lines.some((line) => /did not move/.test(line)), lines.join('\n'));
+});
+
+test('only the last of two lock commands is checked', async (t) => {
+  const world = await createWorld({ config: { lock_control: true } });
+  const lines = captureLogs(t, 'info');
+  await world.gladys.fake.setValue(world.discovered(LOCK), world.feature(LOCK, 'lock'), 1);
+  await world.gladys.fake.setValue(world.discovered(LOCK), world.feature(LOCK, 'lock'), 0);
+  // Unlocked, as the second command asked: the first check stays quiet.
+  await world.runDelayed();
+  assert.ok(!lines.some((line) => /did not move/.test(line)), lines.join('\n'));
+});
