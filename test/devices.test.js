@@ -186,11 +186,13 @@ test('a Lock Ultra Max: every documented lock state, any case, and its door', ()
     commands: [{ command: 'lock' }],
     expected: { lock: 1 },
     retryDeviceError: true,
+    verify: true,
   });
   assert.deepEqual(command('lock', 0), {
     commands: [{ command: 'unlock' }],
     expected: { lock: 0 },
     retryDeviceError: true,
+    verify: true,
   });
   assert.deepEqual(command('deadbolt', 1).commands, [{ command: 'deadbolt' }]);
 });

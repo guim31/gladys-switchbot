@@ -304,8 +304,20 @@ long, et sur un « Sie »/« Ihr… » de politesse en allemand. Le store exige 
 - **Réponse d'une commande** (22/11/2026, Ultra Max de pjrlyon : verrouillage « au 2e ou 3e
   essai ») : un `statusCode` 100 peut cacher un refus de l'appareil dans `body.items[].code`
   (190 « device states not synchronized with server ») ; `client.js` le lève. `lock`/`unlock`
-  (idempotents) sont renvoyés **une fois** après 3 s sur une erreur 190 (`retryDeviceError`), jamais
+  (idempotents) sont renvoyés **une fois** après 1,5 s (3 s jusqu'à la 1.2.0) sur une erreur 190 (`retryDeviceError`), jamais
   `press`, `toggle` ni `deadbolt`. Cause exacte non vérifiée sans la serrure.
+- **Le cœur n'attend l'accusé d'une commande que 5 s** (`COMMAND_TIMEOUT_MS` de
+  `externalIntegration.sendCommand.js`) ; au-delà, « La commande envoyée à … a échoué. L'appareil est
+  peut-être injoignable » en rouge, et le widget revient à l'état précédent. Une serrure relayée par
+  un hub (et à plus forte raison le renvoi après 190 : 1,5 s + un appel) dépasse ce délai sans aucune
+  erreur. `setValue` acquitte donc au plus tard à 4 s (`COMMAND_ACK_MS`), la commande continue
+  derrière ; un échec tardif est journalisé (warn) et l'appareil relu. Un échec avant 4 s reste rouge.
+- **`lock`/`unlock` acceptés (100) sans que la serrure bouge** (23/11/2026, Ultra Max ; même
+  symptôme chez Home Assistant, home-assistant/core#179738, sans réponse). Forme des commandes identique dans la doc
+  v1.1, `switchbot_cloud` et `switchbot_api` : `command`, `default`, aucune variante pour l'Ultra.
+  Cause côté SwitchBot non élucidée. Une relecture 20 s après (`LOCK_VERIFY_MS`, pas après `deadbolt`
+  qui laisse une Pro en `latchBoltLocked` = verrouillé) écrit un warn si l'état ne correspond pas ;
+  la réponse brute de chaque commande et sa durée sont en debug (ids masqués).
 - `deadbolt` envoyé à une serrure **déjà déverrouillée** a fait tenter un verrouillage à l'Ultra
   Max : refusé quand le dernier statut lu est déverrouillé.
 - **Diagnostic** : le statut d'une caméra (`Outdoor PTC 3K`) contient `latestImage.imageUrl`, une

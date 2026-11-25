@@ -31,6 +31,7 @@ import {
   toStates,
 } from './devices/index.js';
 import { irCommand } from './devices/remote.js';
+import { maskIds } from './diagnostic.js';
 import { detectEvents, signalsOf } from './events.js';
 import { TEXT } from './i18n.js';
 import { createIssueLog } from './issues.js';
@@ -48,8 +49,19 @@ export const COMMAND_REFRESH_MS = 5_000;
 export const COVER_REFRESH_MS = 15_000;
 // A lock command refused with a device error (190, often "device states not
 // synchronized with server": the hub had not caught up with the lock yet) is
-// sent once more after this delay.
-export const COMMAND_RETRY_MS = 3_000;
+// sent once more after this delay, short enough for the second answer to
+// come back, most of the time, before the ack deadline below.
+export const COMMAND_RETRY_MS = 1_500;
+// The core fails a command whose ack has not come back within 5 s
+// (COMMAND_TIMEOUT_MS of the core): "the command failed, the device may be
+// unreachable", in red, although nothing failed. A lock command relayed by a
+// hub, let alone one retried after a 190, can take longer. The ack is sent
+// after this delay at the latest, the command carrying on behind it: a
+// later failure is logged and the state read again.
+export const COMMAND_ACK_MS = 4_000;
+// A lock command is checked this long after it was accepted: SwitchBot can
+// answer 100 while the lock never moves (Lock Ultra, Ultra Max).
+export const LOCK_VERIFY_MS = 20_000;
 // Webhook events of one device within this delay are read once.
 export const WEBHOOK_DEBOUNCE_MS = 2_000;
 // Retry delays when the account is unreachable or refuses the credentials.
@@ -73,6 +85,7 @@ export class SwitchBotHub {
    * @param {() => number} [options.now]
    * @param {(fn: Function, ms: number) => void} [options.later] delayed work (tests run it now)
    * @param {(ms: number) => Promise<void>} [options.sleep] awaited pause (tests skip it)
+   * @param {(ms: number) => Promise<void>} [options.ackDelay] the ack deadline (tests: never)
    * @param {number} [options.tickMs] poller tick (tests shorten it)
    */
   constructor({
@@ -83,8 +96,17 @@ export class SwitchBotHub {
     now = () => Date.now(),
     later,
     sleep,
+    ackDelay,
     tickMs,
   }) {
+    this.ackDelay =
+      ackDelay ??
+      ((ms) =>
+        new Promise((resolve) => {
+          if (timers) {
+            setTimeout(resolve, ms).unref?.();
+          }
+        }));
     this.sleep =
       sleep ?? ((ms) => (timers ? new Promise((resolve) => setTimeout(resolve, ms)) : null));
     this.gladys = gladys;
@@ -107,6 +129,8 @@ export class SwitchBotHub {
     this.nextRetryAt = 0;
     /** @type {Map<string, object>} SwitchBot id → catalog entry */
     this.entries = new Map();
+    /** @type {Map<string, number>} SwitchBot id → count of verified commands */
+    this.commandSerials = new Map();
     this.unsupportedTypes = [];
     this.deviceCount = 0;
     this.remoteCount = 0;
@@ -529,12 +553,64 @@ export class SwitchBotHub {
       throw new Error(`${entry.name}: "${key}" cannot be controlled`);
     }
     this.logger.info(`Command ${key} = ${value} to ${entry.name}`);
+    const running = this.runCommand(entry, plan);
+    const answered = await Promise.race([
+      running.then(() => true),
+      this.ackDelay(COMMAND_ACK_MS).then(() => false),
+    ]);
+    if (!answered) {
+      // Acked before the core's 5 s deadline; send() logs a later failure.
+      this.logger.debug(`${entry.name}: command ${key} still waiting for SwitchBot`);
+      running.catch(() => {
+        if (!entry.remote) {
+          this.later(() => this.poller.pollNow(entry), 0);
+        }
+      });
+    }
+  }
+
+  /** Send a command plan, publish the expected states, schedule the reads. */
+  async runCommand(entry, plan) {
     await this.send(entry, plan.commands, { retryDeviceError: plan.retryDeviceError });
     const known = new Set(specsOf(entry, this.config).map((spec) => spec.key));
     await this.publishStates(toStates(entryIds(this.gladys, entry), plan.expected, known), entry);
     if (!entry.remote) {
       const delay = entry.kind.kind === 'cover' ? COVER_REFRESH_MS : COMMAND_REFRESH_MS;
       this.later(() => this.poller.pollNow(entry), delay);
+    }
+    if (plan.verify) {
+      const serial = (this.commandSerials.get(entry.id) ?? 0) + 1;
+      this.commandSerials.set(entry.id, serial);
+      this.later(() => this.verifyCommand(entry, plan, serial), LOCK_VERIFY_MS);
+    }
+  }
+
+  /**
+   * Read the device again and warn when it does not show what the accepted
+   * command asked for (a value still moving, or unknown, is not a mismatch).
+   */
+  async verifyCommand(entry, plan, serial) {
+    // A newer command on the same device has its own check.
+    if (this.commandSerials.get(entry.id) !== serial) {
+      return;
+    }
+    const before = this.statuses.get(entry.id);
+    await this.poller.pollNow(entry);
+    const status = this.statuses.get(entry.id);
+    // No new status: the read failed, nothing can be concluded.
+    if (!status || status === before) {
+      return;
+    }
+    const read = entry.kind.states(status, entry.raw);
+    const wrong = Object.entries(plan.expected).filter(
+      ([key, value]) => read[key] !== undefined && read[key] !== value,
+    );
+    if (wrong.length > 0) {
+      const names = plan.commands.map((c) => c.command).join(', ');
+      this.logger.warn(
+        `${entry.name}: SwitchBot accepted "${names}" but the device reads otherwise ` +
+          `${LOCK_VERIFY_MS / 1000} s later (it did not move, or was operated since)`,
+      );
     }
   }
 
@@ -550,7 +626,7 @@ export class SwitchBotHub {
     for (const command of commands) {
       try {
         try {
-          await this.client.sendCommand(entry.id, command);
+          await this.sendOne(entry, command);
         } catch (err) {
           if (!retryDeviceError || err?.code !== 'device') {
             throw err;
@@ -559,7 +635,7 @@ export class SwitchBotHub {
             `${entry.name}: command ${command.command} refused (${err.message}), sent again`,
           );
           await this.sleep(COMMAND_RETRY_MS);
-          await this.client.sendCommand(entry.id, command);
+          await this.sendOne(entry, command);
         }
       } catch (err) {
         if (err?.code === 'offline') {
@@ -568,6 +644,24 @@ export class SwitchBotHub {
         this.logger.warn(`${entry.name}: command ${command.command} failed (${err.message})`);
         throw new Error(`${entry.name}: ${err.message}`, { cause: err });
       }
+    }
+  }
+
+  /** One API command; its raw answer goes to the debug log, ids masked. */
+  async sendOne(entry, command) {
+    const started = this.now();
+    const log = (answer) =>
+      this.logger.debug(
+        `${entry.name}: command ${command.command} answered in ${this.now() - started} ms: ` +
+          JSON.stringify(maskIds(answer ?? null)),
+      );
+    try {
+      log(await this.client.sendCommand(entry.id, command));
+    } catch (err) {
+      if (err?.response !== undefined) {
+        log(err.response);
+      }
+      throw err;
     }
   }
 

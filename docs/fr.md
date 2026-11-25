@@ -158,7 +158,7 @@ Le bouton **Déverrouiller le pêne dormant** ne sert qu'à partir d'une serrure
 reverrouille pas. Si la serrure est déjà lue déverrouillée, il est refusé (message en rouge, d'après une lecture faite juste avant), car
 une Lock Ultra Max a tenté de se verrouiller dans ce cas. Quand SwitchBot répond qu'une commande
 de verrouillage n'a pas abouti sur la serrure (erreur 190, souvent « état non synchronisé »),
-l'intégration la renvoie une fois après 3 secondes, puis affiche l'échec en rouge.
+l'intégration la renvoie une fois après 1,5 seconde, puis affiche l'échec en rouge. Gladys attend une commande 5 secondes : une réponse plus tardive n'est pas affichée, un échec ne figure alors que dans les journaux de l'intégration.
 
 ### Télécommandes IR
 

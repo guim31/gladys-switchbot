@@ -69,7 +69,7 @@ export function createClient({
   nonce = () => randomUUID(),
   onCall = () => {},
 }) {
-  async function request(method, path, body) {
+  async function request(method, path, body, { raw = false } = {}) {
     const headers = {
       ...signHeaders({ token, secret, t: now(), nonce: nonce() }),
       'Content-Type': 'application/json; charset=utf8',
@@ -112,7 +112,7 @@ export function createClient({
       const items = Array.isArray(payload.body?.items) ? payload.body.items : [];
       const failed = items.find((item) => item?.code !== undefined && item.code !== 100);
       if (!failed) {
-        return payload.body ?? {};
+        return raw ? payload : (payload.body ?? {});
       }
       statusCode = failed.code;
       message = failed.message;
@@ -123,10 +123,14 @@ export function createClient({
     // Messages come from SwitchBot and never echo the credentials.
     const detail = typeof message === 'string' ? message.slice(0, 120) : '';
     const codes = { 151: 'device_type', 152: 'not_found', 160: 'unsupported', 190: 'device' };
-    throw new SwitchBotError(
+    const error = new SwitchBotError(
       codes[statusCode] ?? 'api',
       `SwitchBot error ${statusCode ?? '?'}${detail ? ` (${detail})` : ''}`,
     );
+    // The raw answer, for the debug log of a command (ids masked there);
+    // not enumerable, so a logged error object never prints it unmasked.
+    Object.defineProperty(error, 'response', { value: payload });
+    throw error;
   }
 
   return {
@@ -145,15 +149,19 @@ export function createClient({
     },
 
     /**
+     * Resolves with the raw answer (`{ statusCode, message, body }`): the hub
+     * logs it in debug, a lock command SwitchBot accepts but the lock ignores
+     * being otherwise invisible.
      * @param {string} deviceId
      * @param {{ command: string, parameter?: unknown, commandType?: string }} command
      */
     sendCommand(deviceId, { command, parameter = 'default', commandType = 'command' }) {
-      return request('POST', `devices/${encodeURIComponent(deviceId)}/commands`, {
-        command,
-        parameter,
-        commandType,
-      });
+      return request(
+        'POST',
+        `devices/${encodeURIComponent(deviceId)}/commands`,
+        { command, parameter, commandType },
+        { raw: true },
+      );
     },
 
     /** The webhook URLs registered on the account. */

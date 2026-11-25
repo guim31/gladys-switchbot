@@ -32,6 +32,8 @@ export function createFakeSwitchBot({ token = TOKEN, secret = SECRET } = {}) {
     offline: new Set(),
     /** Item codes the next commands get back with a statusCode 100 (190: refused by the device). */
     commandItemCodes: [],
+    /** When set, a command waits for this promise before SwitchBot answers (a slow hub). */
+    commandHold: null,
     refuseAll: false,
     down: false,
 
@@ -79,6 +81,9 @@ export function createFakeSwitchBot({ token = TOKEN, secret = SECRET } = {}) {
       if (method === 'POST' && match) {
         const id = decodeURIComponent(match[1]);
         record('command', { id });
+        if (cloud.commandHold) {
+          await cloud.commandHold;
+        }
         if (cloud.offline.has(id)) {
           return json(200, { statusCode: 161, body: {}, message: 'device offline' });
         }
