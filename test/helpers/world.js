@@ -26,6 +26,7 @@ export const PLUS_URL =
  * @param {boolean} [options.timers] run the real poller timer
  * @param {number} [options.tickMs]
  * @param {(ms: number) => Promise<void>} [options.ackDelay] the ack deadline (default: never)
+ * @param {(cloud: object) => void} [options.prepare] change the fake cloud before discovery
  */
 export async function createWorld({
   config = {},
@@ -36,8 +37,10 @@ export async function createWorld({
   timers = false,
   tickMs,
   ackDelay,
+  prepare,
 } = {}) {
   const cloud = createFakeSwitchBot();
+  prepare?.(cloud);
   const gladys = createFakeGladys({
     config: { ...(configured ? { token: TOKEN, secret: SECRET } : {}), ...config },
     webhooks,

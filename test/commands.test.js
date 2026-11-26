@@ -112,9 +112,10 @@ test('the deadbolt button retracts the deadbolt only, and needs the option', asy
   assert.equal(deadbolt.type, 'push');
   assert.equal(deadbolt.read_only, false);
   // The fixture lock reads unlocked: the deadbolt is already retracted, and
-  // `deadbolt` sent then made an Ultra Max try to lock. Refused, in red.
+  // `deadbolt` sent then made an Ultra Max try to lock. Nothing is sent, and
+  // nothing fails either: the lock is where it was asked to be.
   const already = await on.gladys.fake.setValue(on.discovered(id), deadbolt, 1);
-  assert.equal(already.success, false);
+  assert.equal(already.success, true);
   assert.equal(on.cloud.count('command'), 0);
   // Locked (read again after a lock command): the deadbolt retracts.
   await on.gladys.fake.setValue(on.discovered(id), on.feature(id, 'lock'), 1);
@@ -177,5 +178,93 @@ test('a device error is never retried on a non-idempotent command (deadbolt)', a
   on.cloud.commandItemCodes.push(190);
   const ack = await on.gladys.fake.setValue(on.discovered(id), on.feature(id, 'deadbolt'), 1);
   assert.equal(ack.success, false);
+  assert.equal(on.cloud.count('command'), 1);
+});
+
+/** The fixture lock turned into a Lock Ultra Max, deadbolt thrown, door sensor wrong. */
+function ultraMax(lockState = 'locked') {
+  return (cloud) => {
+    const device = cloud.deviceList.deviceList.find((d) => d.deviceId === 'F0000000000B');
+    device.deviceType = 'Smart Lock Ultra Max';
+    Object.assign(cloud.statuses.F0000000000B, {
+      deviceType: 'Smart Lock Ultra Max',
+      lockState,
+      // The app shows the door open while it is closed (forum, 26/11/2026).
+      doorState: 'opened',
+    });
+  };
+}
+
+test('Lock Ultra Max: unlocking never opens the door (deadbolt, not unlock)', async () => {
+  const on = await createWorld({ config: { lock_control: true }, prepare: ultraMax() });
+  const id = 'F0000000000B';
+  const lockFeature = on.feature(id, 'lock');
+  assert.ok(!on.discovered(id).features.some((f) => f.external_id.endsWith(':open-door')));
+  const ack = await on.gladys.fake.setValue(on.discovered(id), lockFeature, 0);
+  assert.equal(ack.success, true);
+  assert.deepEqual(
+    on.cloud.commands.map((c) => c.command),
+    ['deadbolt'],
+  );
+  assert.equal(on.state(id, 'lock'), 0);
+
+  // Unlocked now (deadbolt retracted, latch holding): pressing "unlock" or
+  // the deadbolt button again sends nothing and shows no error.
+  on.cloud.statuses[id].lockState = 'latchBoltLocked';
+  await on.runDelayed();
+  for (const feature of [lockFeature, on.feature(id, 'deadbolt')]) {
+    const again = await on.gladys.fake.setValue(on.discovered(id), feature, 0);
+    assert.equal(again.success, true);
+  }
+  assert.equal(on.cloud.count('command'), 1);
+
+  // Locking goes through, door sensor "open" or not.
+  const locked = await on.gladys.fake.setValue(on.discovered(id), lockFeature, 1);
+  assert.equal(locked.success, true);
+  assert.equal(on.cloud.commands.at(-1).command, 'lock');
+});
+
+test('Lock Ultra Max: a deadbolt refused on the lock is not sent again (it toggles)', async () => {
+  const on = await createWorld({ config: { lock_control: true }, prepare: ultraMax() });
+  const id = 'F0000000000B';
+  on.cloud.commandItemCodes.push(190);
+  const ack = await on.gladys.fake.setValue(on.discovered(id), on.feature(id, 'lock'), 0);
+  assert.equal(ack.success, false);
+  assert.equal(on.cloud.count('command'), 1);
+});
+
+test('Lock Ultra Max: a refused lock says the door may be open', async () => {
+  const on = await createWorld({
+    config: { lock_control: true },
+    prepare: ultraMax('latchBoltLocked'),
+  });
+  const id = 'F0000000000B';
+  on.cloud.commandItemCodes.push(190, 190);
+  const ack = await on.gladys.fake.setValue(on.discovered(id), on.feature(id, 'lock'), 1);
+  assert.equal(ack.success, false);
+  assert.match(String(ack.error?.en ?? ack.error), /door may be open/);
+  assert.equal(on.cloud.count('command'), 2);
+});
+
+test('Lock Ultra Max: "Open the door" sends unlock, only with its own option', async () => {
+  const off = await createWorld({ config: { lock_control: true }, prepare: ultraMax() });
+  assert.equal(off.feature('F0000000000B', 'open-door'), undefined);
+
+  const on = await createWorld({
+    config: { lock_control: true, lock_open: true },
+    prepare: ultraMax(),
+  });
+  const id = 'F0000000000B';
+  const open = on.feature(id, 'open-door');
+  assert.equal(open.category, 'button');
+  assert.equal(open.type, 'push');
+  const ack = await on.gladys.fake.setValue(on.discovered(id), open, 1);
+  assert.equal(ack.success, true);
+  assert.equal(on.cloud.commands.at(-1).command, 'unlock');
+
+  // The option turned off afterwards: the button stays in Gladys, refused.
+  await on.gladys.fake.configUpdated({ ...on.gladys.fake.config, lock_open: false });
+  const refused = await on.gladys.fake.setValue(on.discovered(id), open, 1);
+  assert.equal(refused.success, false);
   assert.equal(on.cloud.count('command'), 1);
 });

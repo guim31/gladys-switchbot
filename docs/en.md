@@ -132,6 +132,16 @@ On a Lock Ultra or Ultra Max, a lock whose deadbolt is retracted while the latch
 the usual state of a Lock Ultra once unlocked) reads **unlocked**: anyone can open with the handle. The other models keep reading
 it locked until a diagnostic shows otherwise.
 
+On a Lock Ultra or Ultra Max (since the version after 1.3.0), **unlocking never opens the door**:
+SwitchBot's `unlock` unlocks and pulls the latch on those models, so the door opens, seen on an Ultra
+Max. The **Lock / unlock** switch therefore sends `deadbolt` to unlock: the deadbolt retracts, the
+door stays closed until the handle is turned. Opening the door from Gladys is a separate **Open the
+door** button (`unlock`), only with the second option **Allow opening the door (Lock Ultra)**, off
+by default; add or update the lock after turning it on. Leave it off unless you need it: anyone who
+reaches the button opens the door. The door state of these locks is not reliable (the SwitchBot app
+itself can show the door open while it is closed): the integration never relies on it to send or
+refuse a command.
+
 Labels (since the version after 1.1.0): **Lock / unlock** is the command (the dashboard switch sends the action
 you choose), **Lock state** tells whether the lock is locked, and **Door state** only tells
 whether the door is open or closed: a "Closed" door may be unlocked. Names are set when the device
@@ -139,10 +149,12 @@ is added to Gladys: a lock added earlier keeps its old names (rename the feature
 wish), with nothing lost, identifiers do not change.
 
 The **Unlock the deadbolt only** button works from a locked lock only: it does not lock again. If
-the lock already reads unlocked, it is refused (red message, from a read made just before), since a Lock Ultra Max tried to lock
-in that case. When SwitchBot answers that a lock command failed on the lock (error 190, often
-"states not synchronized"), the integration sends it once more after 1.5 seconds, then shows the
-failure in red. Gladys waits 5 seconds for a command: an answer that comes later is not shown, a
+the lock already reads unlocked (from a read made just before), nothing is sent and nothing fails:
+`deadbolt` sent then made a Lock Ultra Max lock again. Lock with the **Lock / unlock** switch. When
+SwitchBot answers that a lock or unlock command failed on the lock (error 190, often "states not
+synchronized"), the integration sends `lock` or `unlock` once more after 1.5 seconds (never
+`deadbolt`), then shows the failure in red. A lock refuses to lock a door left open: close it
+first. Gladys waits 5 seconds for a command: an answer that comes later is not shown, a
 failure then only goes to the integration logs.
 
 ### IR remotes

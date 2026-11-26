@@ -32,9 +32,17 @@
 // not for the Vision models, and Home Assistant leaves it out of the Lite:
 // same here.
 //
-// `lock` and `unlock` are sent as documented for every model, Ultra and Ultra
-// Max included (`commandType` "command", parameter "default"), exactly as
-// Home Assistant's switchbot_cloud does: no other form exists in the API.
+// `lock` and `unlock` are sent as documented (`commandType` "command",
+// parameter "default"): no other form exists in the API.
+//
+// On the Lock Ultra and Ultra Max, `unlock` unlocks AND pulls the latch: the
+// door opens (Ultra Max of a forum user, 26/11/2026; OpenWonderLabs/
+// SwitchBotAPI#416 and #473 for the Ultra), where `deadbolt` retracts the
+// deadbolt and leaves the door closed on its latch. A remote "unlock" must not
+// open the door: on those two models the switch's "unlocked" sends
+// `deadbolt`, and only from a lock that does not already read unlocked
+// (`deadbolt` sent then made an Ultra Max lock again: it toggles). Opening the
+// door (`unlock`) is a separate button behind a second option, off by default.
 // -----------------------------------------------------------------------------
 
 import {
@@ -65,7 +73,11 @@ const WITH_DEADBOLT = [
   'Smart Lock Ultra Max',
 ];
 
+// `unlock` opens the door on these models: unlocking goes through `deadbolt`.
+const UNLOCK_OPENS_DOOR = ['Smart Lock Ultra', 'Smart Lock Ultra Max'];
+
 export const hasDeadbolt = (device) => WITH_DEADBOLT.includes(device?.deviceType);
+export const unlockOpensDoor = (device) => UNLOCK_OPENS_DOOR.includes(device?.deviceType);
 
 /** @param {string} value `lockState` @param {string} [deviceType] from the device list */
 export function readLockState(value, deviceType) {
@@ -125,6 +137,9 @@ export const lock = {
       if (hasDeadbolt(device)) {
         specs.splice(1, 0, push('deadbolt', 'deadbolt'));
       }
+      if (config.lock_open && unlockOpensDoor(device)) {
+        specs.splice(2, 0, push('open-door', 'openDoor'));
+      }
     }
     return specs;
   },
@@ -141,35 +156,68 @@ export const lock = {
     };
   },
 
+  /**
+   * Commands decided on the lock's state: read it just before (a status may
+   * predate a lock by hand, keypad or the app).
+   */
+  needsFreshStatus({ key, value, device }) {
+    return key === 'deadbolt' || (key === 'lock' && Number(value) !== 1 && unlockOpensDoor(device));
+  },
+
   command({ key, value, device, status, config }) {
     // The option may have been turned off after the device was added.
     if (!config.lock_control) {
       return null;
     }
+    const unlocked = readLockState(status?.lockState, device.deviceType) === LOCK_STATE.UNLOCKED;
     if (key === 'deadbolt') {
       if (!hasDeadbolt(device)) {
         return null;
       }
-      // Sent to a lock already unlocked, `deadbolt` made an Ultra Max try to
-      // lock (forum, 22/11/2026): it only unlocks, from a locked state.
-      if (readLockState(status?.lockState, device.deviceType) === LOCK_STATE.UNLOCKED) {
-        throw new Error('the lock already reads unlocked (deadbolt retracted): lock it first');
+      return deadboltPlan(unlocked);
+    }
+    if (key === 'open-door') {
+      if (!config.lock_open || !unlockOpensDoor(device)) {
+        return null;
       }
-      return { commands: [{ command: 'deadbolt' }], expected: { lock: 0 } };
+      return {
+        commands: [{ command: 'unlock' }],
+        expected: { lock: 0 },
+        retryDeviceError: true,
+        verify: true,
+      };
     }
     if (key !== 'lock') {
       return null;
     }
     const locked = Number(value) === 1;
+    if (!locked && unlockOpensDoor(device)) {
+      // `unlock` would open the door: retract the deadbolt only. On these
+      // models `latchBoltLocked` reads unlocked, so the check below holds.
+      return { ...deadboltPlan(unlocked), verify: true };
+    }
     return {
       commands: [{ command: locked ? 'lock' : 'unlock' }],
       expected: { lock: locked ? 1 : 0 },
       retryDeviceError: true,
       // SwitchBot can answer 100 to `lock` while the lock never moves (Ultra
-      // Max; Lock Ultra, home-assistant/core#179738): read
-      // it again later and warn. Not after `deadbolt`, which leaves a Lock
-      // or Pro on `latchBoltLocked`, read as locked on those models.
+      // Max; Lock Ultra, home-assistant/core#179738): read it again later
+      // and warn. Not after the `deadbolt` button on a Lock or Pro, which
+      // leaves it on `latchBoltLocked`, read as locked on those models.
       verify: true,
     };
   },
 };
+
+/**
+ * `deadbolt` retracts the deadbolt of a locked lock. Sent to a lock already
+ * unlocked, it made an Ultra Max lock again (forum, 22/11/2026): then nothing
+ * is sent, and the command succeeds, the lock being where it was asked to be.
+ * Never sent again on a device error (190): it toggles.
+ */
+function deadboltPlan(alreadyUnlocked) {
+  return {
+    commands: alreadyUnlocked ? [] : [{ command: 'deadbolt' }],
+    expected: { lock: 0 },
+  };
+}

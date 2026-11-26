@@ -319,7 +319,16 @@ long, et sur un « Sie »/« Ihr… » de politesse en allemand. Le store exige 
   qui laisse une Pro en `latchBoltLocked` = verrouillé) écrit un warn si l'état ne correspond pas ;
   la réponse brute de chaque commande et sa durée sont en debug (ids masqués).
 - `deadbolt` envoyé à une serrure **déjà déverrouillée** a fait tenter un verrouillage à l'Ultra
-  Max : refusé quand le dernier statut lu est déverrouillé.
+  Max (c'est une bascule) : rien n'est envoyé quand une lecture faite juste avant dit déverrouillé,
+  et la commande réussit (plus d'erreur rouge au 2e appui, 26/11/2026). Jamais renvoyé sur 190.
+- **Sur Lock Ultra et Ultra Max, `unlock` ouvre la porte** (déverrouille et tire le demi-tour ;
+  Ultra Max de pjrlyon, 26/11/2026 ; OpenWonderLabs/SwitchBotAPI#416 et #473). `deadbolt` laisse la
+  porte fermée sur son demi-tour. L'interrupteur envoie donc `deadbolt` pour « déverrouillé » sur ces
+  deux modèles (`unlockOpensDoor`), avec lecture fraîche avant (`needsFreshStatus`). Ouvrir la porte
+  = bouton `open-door` (`unlock`) derrière une 2e option `lock_open`, désactivée par défaut. Home
+  Assistant fait l'inverse (`open` → `deadbolt`) : ne pas s'y fier. Le `doorState` de ces serrures
+  est faux même dans l'appli SwitchBot : jamais utilisé pour décider d'une commande. Un `lock`
+  refusé (190) vise une porte restée ouverte ou un hub pas à jour : le message le dit (journal).
 - **Diagnostic** : le statut d'une caméra (`Outdoor PTC 3K`) contient `latestImage.imageUrl`, une
   URL S3 présignée avec jeton (valable ~10 min). Toute URL est réduite à son hôte, toute valeur
   « jeton » masquée, à toute profondeur (`scrubString`).

@@ -147,6 +147,18 @@ Sur une Lock Ultra ou Ultra Max, une serrure dont le pêne dormant est rentré e
 **déverrouillée** : n'importe qui ouvre avec la poignée. Les autres modèles le lisent encore
 verrouillé, en attendant un diagnostic qui dise le contraire.
 
+Sur une Lock Ultra ou Ultra Max (depuis la version qui suit la 1.3.0), **déverrouiller n'ouvre jamais
+la porte** : sur ces modèles, la commande `unlock` de SwitchBot déverrouille et tire le demi-tour, et
+la porte s'ouvre (constaté sur une Ultra Max). L'interrupteur **Verrouiller / déverrouiller** envoie
+donc `deadbolt` pour déverrouiller : le pêne dormant rentre, la porte reste fermée jusqu'à ce qu'on
+abaisse la poignée. Ouvrir la porte depuis Gladys passe par un bouton séparé, **Ouvrir la porte**
+(`unlock`), seulement avec la deuxième option **Autoriser l'ouverture de la porte (Lock Ultra)**,
+désactivée par défaut ; ajoutez ou mettez à jour la serrure après l'avoir activée. Laissez-la
+désactivée si vous n'en avez pas besoin : quiconque atteint le bouton ouvre la porte. L'état de la
+porte de ces serrures n'est pas fiable (l'application SwitchBot elle-même peut afficher la porte
+ouverte alors qu'elle est fermée) : l'intégration ne s'en sert jamais pour envoyer ou refuser une
+commande.
+
 Libellés (depuis la version qui suit la 1.1.0) : **Verrouiller / déverrouiller** est la commande (l'interrupteur du
 tableau de bord envoie l'action choisie), **État de la serrure** dit si elle est verrouillée, et
 **État de la porte** dit seulement si la porte est ouverte ou fermée : une porte « Fermée » peut
@@ -155,10 +167,13 @@ ajoutée garde les anciens noms (renommez les fonctionnalités dans Gladys si vo
 sans rien perdre, les identifiants ne changent pas.
 
 Le bouton **Déverrouiller le pêne dormant** ne sert qu'à partir d'une serrure verrouillée : il ne
-reverrouille pas. Si la serrure est déjà lue déverrouillée, il est refusé (message en rouge, d'après une lecture faite juste avant), car
-une Lock Ultra Max a tenté de se verrouiller dans ce cas. Quand SwitchBot répond qu'une commande
-de verrouillage n'a pas abouti sur la serrure (erreur 190, souvent « état non synchronisé »),
-l'intégration la renvoie une fois après 1,5 seconde, puis affiche l'échec en rouge. Gladys attend une commande 5 secondes : une réponse plus tardive n'est pas affichée, un échec ne figure alors que dans les journaux de l'intégration.
+reverrouille pas. Si la serrure est déjà lue déverrouillée (d'après une lecture faite juste avant),
+rien n'est envoyé et rien n'échoue : `deadbolt` envoyé dans ce cas a fait se reverrouiller une Lock
+Ultra Max. On verrouille avec l'interrupteur **Verrouiller / déverrouiller**. Quand SwitchBot répond
+qu'une commande de verrouillage ou de déverrouillage n'a pas abouti sur la serrure (erreur 190,
+souvent « état non synchronisé »), l'intégration renvoie `lock` ou `unlock` une fois après 1,5
+seconde (jamais `deadbolt`), puis affiche l'échec en rouge. Une serrure refuse de verrouiller une
+porte restée ouverte : refermez-la d'abord. Gladys attend une commande 5 secondes : une réponse plus tardive n'est pas affichée, un échec ne figure alors que dans les journaux de l'intégration.
 
 ### Télécommandes IR
 

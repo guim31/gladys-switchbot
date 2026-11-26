@@ -17,6 +17,7 @@ test('defaults, and values from a form', () => {
     webhook: 'true',
     ir_remotes: 1,
     lock_control: 'false',
+    lock_open: 'true',
     language: 'de',
   });
   assert.deepEqual(config, {
@@ -26,6 +27,7 @@ test('defaults, and values from a form', () => {
     webhook: true,
     ir_remotes: true,
     lock_control: false,
+    lock_open: true,
     language: 'de',
   });
   assert.equal(chosenIntervalMs(config), 300_000);

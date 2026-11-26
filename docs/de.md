@@ -141,6 +141,17 @@ SwitchBot, der übliche Zustand eines entriegelten Lock Ultra), als **entriegelt
 mit der Klinke öffnen. Die anderen Modelle lesen diesen Zustand weiter als verriegelt, bis eine Diagnose
 etwas anderes zeigt.
 
+Bei einem Lock Ultra oder Ultra Max (seit der Version nach 1.3.0) **öffnet Entriegeln nie die Tür**:
+Der SwitchBot-Befehl `unlock` entriegelt bei diesen Modellen und zieht die Falle zurück, die Tür geht
+auf (bei einem Ultra Max beobachtet). Der Schalter **Verriegeln / entriegeln** sendet zum Entriegeln
+deshalb `deadbolt`: Der Riegel fährt ein, die Tür bleibt zu, bis du die Klinke drückst. Die Tür aus
+Gladys öffnen geht über einen eigenen Knopf **Tür öffnen** (`unlock`), nur mit der zweiten Option
+**Öffnen der Tür erlauben (Lock Ultra)**, standardmäßig aus; füge das Schloss danach hinzu oder
+aktualisiere es. Lass sie aus, wenn du sie nicht brauchst: Wer den Knopf erreicht, öffnet die Tür.
+Der Türstatus dieser Schlösser ist unzuverlässig (die SwitchBot-App selbst kann die Tür offen
+zeigen, obwohl sie zu ist): Die Integration verlässt sich nie darauf, um einen Befehl zu senden oder
+abzulehnen.
+
 Bezeichnungen (seit der Version nach 1.1.0): **Verriegeln / entriegeln** ist der Befehl (der Schalter im
 Dashboard sendet die gewählte Aktion), **Schlossstatus** zeigt, ob das Schloss verriegelt ist, und
 **Türstatus** zeigt nur, ob die Tür offen oder geschlossen ist: Eine „geschlossene“ Tür kann
@@ -149,10 +160,13 @@ Schloss behält die alten Namen (du kannst die Funktionen in Gladys umbenennen),
 Kennungen ändern sich nicht.
 
 Der Knopf **Nur den Riegel entriegeln** wirkt nur bei einem verriegelten Schloss: Er verriegelt
-nicht wieder. Ist das Schloss schon als entriegelt gelesen, wird er abgelehnt (rote Meldung, nach einer Abfrage direkt davor), denn
-ein Lock Ultra Max hat in diesem Fall versucht zu verriegeln. Meldet SwitchBot, dass ein
-Verriegelungsbefehl am Schloss gescheitert ist (Fehler 190, oft „Status nicht synchronisiert“),
-sendet die Integration ihn nach 1,5 Sekunden noch einmal und zeigt dann den Fehler rot an. Gladys wartet 5 Sekunden auf einen Befehl: Eine spätere Antwort wird nicht angezeigt, ein Fehler steht dann nur in den Protokollen der Integration.
+nicht wieder. Ist das Schloss schon als entriegelt gelesen (nach einer Abfrage direkt davor), wird
+nichts gesendet und nichts schlägt fehl: `deadbolt` hat ein Lock Ultra Max in diesem Fall wieder
+verriegelt. Verriegeln geht mit dem Schalter **Verriegeln / entriegeln**. Meldet SwitchBot, dass ein
+Ver- oder Entriegelungsbefehl am Schloss gescheitert ist (Fehler 190, oft „Status nicht
+synchronisiert“), sendet die Integration `lock` oder `unlock` nach 1,5 Sekunden noch einmal (nie
+`deadbolt`) und zeigt dann den Fehler rot an. Ein Schloss verriegelt keine offen gebliebene Tür:
+schließ sie zuerst. Gladys wartet 5 Sekunden auf einen Befehl: Eine spätere Antwort wird nicht angezeigt, ein Fehler steht dann nur in den Protokollen der Integration.
 
 ### IR-Fernbedienungen
 
