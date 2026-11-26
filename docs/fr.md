@@ -171,7 +171,8 @@ sans rien perdre, les identifiants ne changent pas.
 Le bouton **Déverrouiller le pêne dormant** ne sert qu'à partir d'une serrure verrouillée : il ne
 reverrouille pas. Si la serrure est déjà lue déverrouillée (d'après une lecture faite juste avant),
 rien n'est envoyé et rien n'échoue : `deadbolt` envoyé dans ce cas a fait se reverrouiller une Lock
-Ultra Max. On verrouille avec l'interrupteur **Verrouiller / déverrouiller**. Quand SwitchBot répond
+Ultra Max. Si cette lecture échoue, ou si la serrure est lue en mouvement, bloquée ou inconnue, la
+commande est refusée et rien n'est envoyé. On verrouille avec l'interrupteur **Verrouiller / déverrouiller**. Quand SwitchBot répond
 qu'une commande de verrouillage ou de déverrouillage n'a pas abouti sur la serrure (erreur 190,
 souvent « état non synchronisé »), l'intégration renvoie `lock` ou `unlock` une fois après 1,5
 seconde (jamais `deadbolt`), puis affiche l'échec en rouge. Une serrure refuse de verrouiller une

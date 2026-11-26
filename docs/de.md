@@ -164,7 +164,8 @@ Kennungen ändern sich nicht.
 Der Knopf **Nur den Riegel entriegeln** wirkt nur bei einem verriegelten Schloss: Er verriegelt
 nicht wieder. Ist das Schloss schon als entriegelt gelesen (nach einer Abfrage direkt davor), wird
 nichts gesendet und nichts schlägt fehl: `deadbolt` hat ein Lock Ultra Max in diesem Fall wieder
-verriegelt. Verriegeln geht mit dem Schalter **Verriegeln / entriegeln**. Meldet SwitchBot, dass ein
+verriegelt. Schlägt diese Abfrage fehl oder ist das Schloss in Bewegung, blockiert oder unbekannt,
+wird der Befehl abgelehnt und nichts gesendet. Verriegeln geht mit dem Schalter **Verriegeln / entriegeln**. Meldet SwitchBot, dass ein
 Ver- oder Entriegelungsbefehl am Schloss gescheitert ist (Fehler 190, oft „Status nicht
 synchronisiert“), sendet die Integration `lock` oder `unlock` nach 1,5 Sekunden noch einmal (nie
 `deadbolt`) und zeigt dann den Fehler rot an. Ein Schloss verriegelt keine offen gebliebene Tür:

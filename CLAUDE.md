@@ -329,6 +329,9 @@ long, et sur un « Sie »/« Ihr… » de politesse en allemand. Le store exige 
   Assistant fait l'inverse (`open` → `deadbolt`) : ne pas s'y fier. Le `doorState` de ces serrures
   est faux même dans l'appli SwitchBot : jamais utilisé pour décider d'une commande. Un `lock`
   refusé (190) vise une porte restée ouverte ou un hub pas à jour : le message le dit (journal).
+  `deadbolt` part seulement depuis un état lu LOCKED ; refus si la lecture fraîche échoue (statut
+  inchangé après `pollNow`) ou si l'état n'est pas clair (mouvement, bloqué, inconnu). `open-door`
+  jamais renvoyé sur 190 (le demi-tour serait tiré deux fois).
 - **Diagnostic** : le statut d'une caméra (`Outdoor PTC 3K`) contient `latestImage.imageUrl`, une
   URL S3 présignée avec jeton (valable ~10 min). Toute URL est réduite à son hôte, toute valeur
   « jeton » masquée, à toute profondeur (`scrubString`).

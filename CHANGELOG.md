@@ -27,6 +27,8 @@ the notes of the version's GitHub Release.
 - Unlocking a lock that is already unlocked, or pressing "Unlock the deadbolt only" twice, no
   longer shows "the command failed": nothing is sent, the lock is already where it was asked to be.
   Sending the deadbolt command again had made a Lock Ultra Max lock itself.
+- The deadbolt button, and unlocking a Lock Ultra, are refused (nothing sent) when the lock cannot
+  be read just before, or reads moving, jammed or unknown: the deadbolt command toggles the lock.
 - A lock that refuses to lock now says in the logs that the door may be open or the lock not yet in
   sync with its hub.
 

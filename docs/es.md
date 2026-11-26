@@ -163,7 +163,8 @@ cambian.
 
 El botón **Desbloquear solo el cerrojo** solo sirve desde una cerradura bloqueada: no vuelve a
 bloquear. Si la cerradura ya se lee desbloqueada (según una lectura hecha justo antes), no se envía
-nada y nada falla: `deadbolt` enviado en ese caso volvió a bloquear una Lock Ultra Max. Se bloquea con
+nada y nada falla: `deadbolt` enviado en ese caso volvió a bloquear una Lock Ultra Max. Si esa lectura falla, o la cerradura se lee en movimiento,
+atascada o desconocida, la orden se rechaza y no se envía nada. Se bloquea con
 el interruptor **Bloquear / desbloquear**. Cuando SwitchBot responde que un comando de bloqueo o
 desbloqueo ha fallado en la cerradura (error 190, a menudo «estado no sincronizado»), la integración
 reenvía `lock` o `unlock` una vez tras 1,5 segundos (nunca `deadbolt`) y luego muestra el fallo en

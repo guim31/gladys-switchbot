@@ -135,8 +135,7 @@ it locked until a diagnostic shows otherwise.
 On a Lock Ultra or Ultra Max (since the version after 1.3.0), **unlocking no longer sends `unlock`**, which opens the door:
 SwitchBot's `unlock` unlocks and pulls the latch on those models, so the door opens, seen on an Ultra
 Max. The **Lock / unlock** switch therefore sends `deadbolt` to unlock: the deadbolt retracts, the
-door stays closed until the handle is turned (checked on an Ultra Max; on some Lock Ultra, Ultra
-users report that `deadbolt` pulls the latch briefly too, OpenWonderLabs/SwitchBotAPI#416: tell
+door stays closed until the handle is turned (checked on an Ultra Max; on some Lock Ultra, users report that `deadbolt` pulls the latch briefly too, OpenWonderLabs/SwitchBotAPI#416: tell
 us what yours does). Opening the door from Gladys is a separate **Open the
 door** button (`unlock`), only with the second option **Allow opening the door (Lock Ultra)**, off
 by default; add or update the lock after turning it on. Leave it off unless you need it: anyone who
@@ -152,7 +151,8 @@ wish), with nothing lost, identifiers do not change.
 
 The **Unlock the deadbolt only** button works from a locked lock only: it does not lock again. If
 the lock already reads unlocked (from a read made just before), nothing is sent and nothing fails:
-`deadbolt` sent then made a Lock Ultra Max lock again. Lock with the **Lock / unlock** switch. When
+`deadbolt` sent then made a Lock Ultra Max lock again. If that read fails, or the lock reads
+moving, jammed or unknown, the command is refused and nothing is sent. Lock with the **Lock / unlock** switch. When
 SwitchBot answers that a lock or unlock command failed on the lock (error 190, often "states not
 synchronized"), the integration sends `lock` or `unlock` once more after 1.5 seconds (never
 `deadbolt`), then shows the failure in red. A lock refuses to lock a door left open: close it
