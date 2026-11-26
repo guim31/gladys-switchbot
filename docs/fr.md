@@ -147,11 +147,13 @@ Sur une Lock Ultra ou Ultra Max, une serrure dont le pêne dormant est rentré e
 **déverrouillée** : n'importe qui ouvre avec la poignée. Les autres modèles le lisent encore
 verrouillé, en attendant un diagnostic qui dise le contraire.
 
-Sur une Lock Ultra ou Ultra Max (depuis la version qui suit la 1.3.0), **déverrouiller n'ouvre jamais
-la porte** : sur ces modèles, la commande `unlock` de SwitchBot déverrouille et tire le demi-tour, et
+Sur une Lock Ultra ou Ultra Max (depuis la version qui suit la 1.3.0), **déverrouiller n'envoie plus
+`unlock`**, qui ouvre la porte : sur ces modèles, la commande `unlock` de SwitchBot déverrouille et tire le demi-tour, et
 la porte s'ouvre (constaté sur une Ultra Max). L'interrupteur **Verrouiller / déverrouiller** envoie
 donc `deadbolt` pour déverrouiller : le pêne dormant rentre, la porte reste fermée jusqu'à ce qu'on
-abaisse la poignée. Ouvrir la porte depuis Gladys passe par un bouton séparé, **Ouvrir la porte**
+abaisse la poignée (vérifié sur une Ultra Max ; sur certaines Lock Ultra, des utilisateurs
+rapportent que `deadbolt` tire aussi brièvement le demi-tour, OpenWonderLabs/SwitchBotAPI#416 :
+dites-nous ce que fait la vôtre). Ouvrir la porte depuis Gladys passe par un bouton séparé, **Ouvrir la porte**
 (`unlock`), seulement avec la deuxième option **Autoriser l'ouverture de la porte (Lock Ultra)**,
 désactivée par défaut ; ajoutez ou mettez à jour la serrure après l'avoir activée. Laissez-la
 désactivée si vous n'en avez pas besoin : quiconque atteint le bouton ouvre la porte. L'état de la

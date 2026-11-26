@@ -221,6 +221,27 @@ test('a Lock Ultra Max: every documented lock state, any case, and its door', ()
     // Locking does not look at the door either.
     assert.deepEqual(run('lock', 1).commands, [{ command: 'lock' }]);
   }
+  // Moving, jammed, half locked or unknown: `deadbolt` (a toggle) is never
+  // sent blind.
+  for (const lockState of ['unlocking', 'locking', 'jammed', 'halfLocked', undefined]) {
+    for (const [key, value] of [
+      ['lock', 0],
+      ['deadbolt', 1],
+    ]) {
+      assert.throws(
+        () =>
+          kind.command({
+            key,
+            value,
+            device: ULTRA_MAX,
+            status: lockState ? ultraStatus(lockState, 'close') : undefined,
+            config: normalizeConfig({ lock_control: true }),
+          }),
+        /nothing sent/,
+        `${key} from ${lockState}`,
+      );
+    }
+  }
   // The Lock Ultra too (OpenWonderLabs/SwitchBotAPI#416).
   assert.deepEqual(
     kindOf('Smart Lock Ultra').command({
@@ -262,10 +283,10 @@ test('opening the door of a Lock Ultra needs its own option, off by default', ()
     });
   assert.equal(run({ lock_control: true }), null);
   assert.equal(run({ lock_open: true }), null);
+  // Never sent again on a 190: a second `unlock` would pull the latch twice.
   assert.deepEqual(run({ lock_control: true, lock_open: true }), {
     commands: [{ command: 'unlock' }],
     expected: { lock: 0 },
-    retryDeviceError: true,
     verify: true,
   });
 });

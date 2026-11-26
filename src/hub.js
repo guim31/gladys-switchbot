@@ -542,8 +542,14 @@ export class SwitchBotHub {
       entry.kind.needsFreshStatus?.({ key, value, device: entry.raw })
     ) {
       // Decided on the lock's state (`deadbolt` toggles): a fresh read, not a
-      // status that may predate a lock by hand, keypad or the app.
+      // status that may predate a lock by hand, keypad or the app. refresh()
+      // never throws: a status left unchanged means the read failed, and
+      // nothing is sent on an old one.
+      const before = this.statuses.get(entry.id);
       await this.poller.pollNow(entry);
+      if (this.statuses.get(entry.id) === before) {
+        throw new Error(`${entry.name}: the lock could not be read, nothing sent`);
+      }
     }
     const plan = entry.kind.command?.({
       key,
@@ -559,6 +565,9 @@ export class SwitchBotHub {
       // Already in the asked state (a lock already unlocked, from the read
       // just made, whose state is published): nothing to send, no failure.
       this.logger.info(`Command ${key} = ${value} to ${entry.name}: already done, nothing sent`);
+      // A check still pending for an earlier command would warn about a lock
+      // operated since: this command is the latest one.
+      this.commandSerials.set(entry.id, (this.commandSerials.get(entry.id) ?? 0) + 1);
       return;
     }
     this.logger.info(`Command ${key} = ${value} to ${entry.name}`);

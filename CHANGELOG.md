@@ -12,7 +12,7 @@ the notes of the version's GitHub Release.
 
 ### Security
 
-- Lock Ultra and Lock Ultra Max: unlocking from Gladys no longer opens the door. On those models
+- Lock Ultra and Lock Ultra Max: unlocking from Gladys no longer sends the command that opens the door. On those models
   SwitchBot's `unlock` also pulls the latch, so the door opened; the lock switch now retracts the
   deadbolt only (the door stays closed until the handle is turned). This applies to locks already
   added, without updating them.

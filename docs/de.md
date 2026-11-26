@@ -141,10 +141,12 @@ SwitchBot, der übliche Zustand eines entriegelten Lock Ultra), als **entriegelt
 mit der Klinke öffnen. Die anderen Modelle lesen diesen Zustand weiter als verriegelt, bis eine Diagnose
 etwas anderes zeigt.
 
-Bei einem Lock Ultra oder Ultra Max (seit der Version nach 1.3.0) **öffnet Entriegeln nie die Tür**:
+Bei einem Lock Ultra oder Ultra Max (seit der Version nach 1.3.0) **sendet Entriegeln kein `unlock`
+mehr**, das die Tür öffnet:
 Der SwitchBot-Befehl `unlock` entriegelt bei diesen Modellen und zieht die Falle zurück, die Tür geht
 auf (bei einem Ultra Max beobachtet). Der Schalter **Verriegeln / entriegeln** sendet zum Entriegeln
-deshalb `deadbolt`: Der Riegel fährt ein, die Tür bleibt zu, bis du die Klinke drückst. Die Tür aus
+deshalb `deadbolt`: Der Riegel fährt ein, die Tür bleibt zu, bis du die Klinke drückst (an einem Ultra Max geprüft; bei manchen Lock Ultra zieht `deadbolt`
+laut Nutzern die Falle kurz mit, OpenWonderLabs/SwitchBotAPI#416: sag uns, was deins tut). Die Tür aus
 Gladys öffnen geht über einen eigenen Knopf **Tür öffnen** (`unlock`), nur mit der zweiten Option
 **Öffnen der Tür erlauben (Lock Ultra)**, standardmäßig aus; füge das Schloss danach hinzu oder
 aktualisiere es. Lass sie aus, wenn du sie nicht brauchst: Wer den Knopf erreicht, öffnet die Tür.

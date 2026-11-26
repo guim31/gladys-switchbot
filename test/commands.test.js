@@ -268,3 +268,34 @@ test('Lock Ultra Max: "Open the door" sends unlock, only with its own option', a
   assert.equal(refused.success, false);
   assert.equal(on.cloud.count('command'), 1);
 });
+
+test('Lock Ultra Max: when the read just before fails, nothing is sent', async () => {
+  const on = await createWorld({ config: { lock_control: true }, prepare: ultraMax() });
+  const id = 'F0000000000B';
+  // Known as locked, then unlocked by hand while SwitchBot stops answering
+  // reads: `deadbolt` on that old status would lock it again.
+  on.cloud.statuses[id].lockState = 'latchBoltLocked';
+  on.cloud.down = true;
+  for (const [key, value] of [
+    ['lock', 0],
+    ['deadbolt', 1],
+  ]) {
+    const ack = await on.gladys.fake.setValue(on.discovered(id), on.feature(id, key), value);
+    assert.equal(ack.success, false, key);
+    assert.match(String(ack.error?.en ?? ack.error), /could not be read/);
+  }
+  on.cloud.down = false;
+  assert.equal(on.cloud.count('command'), 0);
+});
+
+test('Lock Ultra Max: a refused "Open the door" is not sent again', async () => {
+  const on = await createWorld({
+    config: { lock_control: true, lock_open: true },
+    prepare: ultraMax(),
+  });
+  const id = 'F0000000000B';
+  on.cloud.commandItemCodes.push(190);
+  const ack = await on.gladys.fake.setValue(on.discovered(id), on.feature(id, 'open-door'), 1);
+  assert.equal(ack.success, false);
+  assert.equal(on.cloud.count('command'), 1);
+});

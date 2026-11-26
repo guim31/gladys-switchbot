@@ -141,11 +141,13 @@ para SwitchBot, el estado habitual de una Lock Ultra desbloqueada) se lee **desb
 cualquiera puede abrir con la manilla. Los demás modelos la siguen leyendo
 bloqueada mientras un diagnóstico no muestre lo contrario.
 
-En una Lock Ultra o Ultra Max (desde la versión posterior a la 1.3.0), **desbloquear nunca abre la
-puerta**: en estos modelos, el comando `unlock` de SwitchBot desbloquea y retrae el pestillo, y la
+En una Lock Ultra o Ultra Max (desde la versión posterior a la 1.3.0), **desbloquear ya no envía
+`unlock`**, que abre la puerta: en estos modelos, el comando `unlock` de SwitchBot desbloquea y retrae el pestillo, y la
 puerta se abre (comprobado en una Ultra Max). Por eso el interruptor **Bloquear / desbloquear** envía
 `deadbolt` para desbloquear: el cerrojo se retrae y la puerta sigue cerrada hasta que se baja la
-manilla. Abrir la puerta desde Gladys pasa por un botón aparte, **Abrir la puerta** (`unlock`), solo
+manilla (comprobado en una Ultra Max; en algunas Lock Ultra, usuarios indican que `deadbolt`
+también retrae brevemente el pestillo, OpenWonderLabs/SwitchBotAPI#416: díganos qué hace la suya).
+Abrir la puerta desde Gladys pasa por un botón aparte, **Abrir la puerta** (`unlock`), solo
 con la segunda opción **Permitir abrir la puerta (Lock Ultra)**, desactivada por defecto; añada o
 actualice la cerradura después de activarla. Déjela desactivada si no la necesita: quien alcance el
 botón abre la puerta. El estado de la puerta de estas cerraduras no es fiable (la propia aplicación

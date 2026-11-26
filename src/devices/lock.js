@@ -169,23 +169,20 @@ export const lock = {
     if (!config.lock_control) {
       return null;
     }
-    const unlocked = readLockState(status?.lockState, device.deviceType) === LOCK_STATE.UNLOCKED;
+    const state = readLockState(status?.lockState, device.deviceType);
     if (key === 'deadbolt') {
       if (!hasDeadbolt(device)) {
         return null;
       }
-      return deadboltPlan(unlocked);
+      return deadboltPlan(state);
     }
     if (key === 'open-door') {
       if (!config.lock_open || !unlockOpensDoor(device)) {
         return null;
       }
-      return {
-        commands: [{ command: 'unlock' }],
-        expected: { lock: 0 },
-        retryDeviceError: true,
-        verify: true,
-      };
+      // Never sent again on a 190: the lock may have moved anyway, and a
+      // second `unlock` would pull the latch twice.
+      return { commands: [{ command: 'unlock' }], expected: { lock: 0 }, verify: true };
     }
     if (key !== 'lock') {
       return null;
@@ -194,7 +191,7 @@ export const lock = {
     if (!locked && unlockOpensDoor(device)) {
       // `unlock` would open the door: retract the deadbolt only. On these
       // models `latchBoltLocked` reads unlocked, so the check below holds.
-      return { ...deadboltPlan(unlocked), verify: true };
+      return { ...deadboltPlan(state), verify: true };
     }
     return {
       commands: [{ command: locked ? 'lock' : 'unlock' }],
@@ -211,13 +208,20 @@ export const lock = {
 
 /**
  * `deadbolt` retracts the deadbolt of a locked lock. Sent to a lock already
- * unlocked, it made an Ultra Max lock again (forum, 22/11/2026): then nothing
- * is sent, and the command succeeds, the lock being where it was asked to be.
- * Never sent again on a device error (190): it toggles.
+ * unlocked, it made an Ultra Max lock again (forum, 22/11/2026): it toggles.
+ * So it is sent only from a lock that reads locked; from one that reads
+ * unlocked nothing is sent and the command succeeds (the lock is where it
+ * was asked to be); moving, jammed, half locked or unknown: refused, nothing
+ * sent. Never sent again on a device error (190).
  */
-function deadboltPlan(alreadyUnlocked) {
-  return {
-    commands: alreadyUnlocked ? [] : [{ command: 'deadbolt' }],
-    expected: { lock: 0 },
-  };
+function deadboltPlan(state) {
+  if (state === LOCK_STATE.UNLOCKED) {
+    return { commands: [], expected: { lock: 0 } };
+  }
+  if (state !== LOCK_STATE.LOCKED) {
+    throw new Error(
+      'the lock reads neither locked nor unlocked (moving, jammed or unknown): nothing sent',
+    );
+  }
+  return { commands: [{ command: 'deadbolt' }], expected: { lock: 0 } };
 }

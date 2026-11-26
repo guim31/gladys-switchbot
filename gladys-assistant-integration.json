@@ -228,10 +228,10 @@
         "es": "Permitir abrir la puerta (Lock Ultra)"
       },
       "description": {
-        "en": "Needs the option above. On: the Lock Ultra and Ultra Max added afterwards get an \"Open the door\" button that unlocks and pulls the latch (the door opens). Unlocking never opens the door.",
-        "fr": "Nécessite l'option ci-dessus. Activé : les Lock Ultra et Ultra Max ajoutées ensuite reçoivent un bouton « Ouvrir la porte » qui déverrouille et tire le demi-tour (la porte s'ouvre). Déverrouiller n'ouvre jamais la porte.",
-        "de": "Braucht die Option darüber. Ein: Danach hinzugefügte Lock Ultra und Ultra Max bekommen einen Knopf „Tür öffnen“, der entriegelt und die Falle zieht (die Tür geht auf). Entriegeln öffnet die Tür nie.",
-        "es": "Requiere la opción anterior. Activado: las Lock Ultra y Ultra Max añadidas después reciben un botón «Abrir la puerta» que desbloquea y retrae el pestillo (la puerta se abre). Desbloquear nunca abre la puerta."
+        "en": "Needs the option above. On: the Lock Ultra and Ultra Max added afterwards get an \"Open the door\" button that unlocks and pulls the latch (the door opens). Without it, unlocking leaves the door closed.",
+        "fr": "Nécessite l'option ci-dessus. Activé : les Lock Ultra et Ultra Max ajoutées ensuite reçoivent un bouton « Ouvrir la porte » qui déverrouille et tire le demi-tour (la porte s'ouvre). Sans elle, déverrouiller laisse la porte fermée.",
+        "de": "Braucht die Option darüber. Ein: Danach hinzugefügte Lock Ultra und Ultra Max bekommen einen Knopf „Tür öffnen“, der entriegelt und die Falle zieht (die Tür geht auf). Ohne sie lässt Entriegeln die Tür zu.",
+        "es": "Requiere la opción anterior. Activado: las Lock Ultra y Ultra Max añadidas después reciben un botón «Abrir la puerta» que desbloquea y retrae el pestillo (la puerta se abre). Sin ella, desbloquear deja la puerta cerrada."
       },
       "required": false,
       "default": false
