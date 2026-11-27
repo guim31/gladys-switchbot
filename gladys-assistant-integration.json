@@ -219,6 +219,24 @@
       "default": false
     },
     {
+      "key": "lock_open",
+      "type": "boolean",
+      "label": {
+        "en": "Allow opening the door (Lock Ultra)",
+        "fr": "Autoriser l'ouverture de la porte (Lock Ultra)",
+        "de": "Öffnen der Tür erlauben (Lock Ultra)",
+        "es": "Permitir abrir la puerta (Lock Ultra)"
+      },
+      "description": {
+        "en": "Needs the option above. On: the Lock Ultra and Ultra Max added afterwards get an \"Open the door\" button that unlocks and pulls the latch (the door opens). The lock switch never sends this command to unlock.",
+        "fr": "Nécessite l'option ci-dessus. Activé : les Lock Ultra et Ultra Max ajoutées ensuite reçoivent un bouton « Ouvrir la porte » qui déverrouille et tire le demi-tour (la porte s'ouvre). L'interrupteur de la serrure n'envoie jamais cette commande pour déverrouiller.",
+        "de": "Braucht die Option darüber. Ein: Danach hinzugefügte Lock Ultra und Ultra Max bekommen einen Knopf „Tür öffnen“, der entriegelt und die Falle zieht (die Tür geht auf). Der Schalter des Schlosses sendet diesen Befehl nie zum Entriegeln.",
+        "es": "Requiere la opción anterior. Activado: las Lock Ultra y Ultra Max añadidas después reciben un botón «Abrir la puerta» que desbloquea y retrae el pestillo (la puerta se abre). El interruptor de la cerradura nunca envía este comando para desbloquear."
+      },
+      "required": false,
+      "default": false
+    },
+    {
       "key": "language",
       "type": "select",
       "label": {

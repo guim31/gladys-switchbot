@@ -105,6 +105,7 @@ test('the keys users store are the published ones (never renamed)', () => {
     'webhook',
     'ir_remotes',
     'lock_control',
+    'lock_open',
     'language',
   ]);
   assert.deepEqual(keysOf(manifest.actions), ['check_connection', 'device_diagnostics']);

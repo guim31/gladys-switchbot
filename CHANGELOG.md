@@ -10,6 +10,28 @@ the notes of the version's GitHub Release.
 
 ## [Unreleased]
 
+### Security
+
+- Lock Ultra and Lock Ultra Max: unlocking from Gladys no longer sends the command that opens the door. On those models
+  SwitchBot's `unlock` also pulls the latch, so the door opened; the lock switch now retracts the
+  deadbolt only (the door stays closed until the handle is turned). This applies to locks already
+  added, without updating them.
+
+### Added
+
+- Lock Ultra and Lock Ultra Max: an "Open the door" button (unlock and pull the latch), only with
+  the new option "Allow opening the door (Lock Ultra)", off by default.
+
+### Fixed
+
+- Unlocking a lock that is already unlocked, or pressing "Unlock the deadbolt only" twice, no
+  longer shows "the command failed": nothing is sent, the lock is already where it was asked to be.
+  Sending the deadbolt command again had made a Lock Ultra Max lock itself.
+- The deadbolt button, and unlocking a Lock Ultra, are refused (nothing sent) when the lock cannot
+  be read just before, or reads moving, jammed or unknown: the deadbolt command toggles the lock.
+- A lock that refuses to lock now says in the logs that the door may be open or the lock not yet in
+  sync with its hub.
+
 ## [1.3.0] - 2026-11-25
 
 ### Fixed

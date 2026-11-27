@@ -17,6 +17,7 @@ export const DEFAULT_CONFIG = {
   webhook: false,
   ir_remotes: false,
   lock_control: false,
+  lock_open: false,
   language: 'fr',
 };
 
@@ -51,6 +52,7 @@ export function normalizeConfig(raw = {}) {
     webhook: toBoolean(source.webhook, DEFAULT_CONFIG.webhook),
     ir_remotes: toBoolean(source.ir_remotes, DEFAULT_CONFIG.ir_remotes),
     lock_control: toBoolean(source.lock_control, DEFAULT_CONFIG.lock_control),
+    lock_open: toBoolean(source.lock_open, DEFAULT_CONFIG.lock_open),
     language: LANGUAGES.includes(language) ? language : DEFAULT_CONFIG.language,
   };
 }

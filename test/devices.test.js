@@ -86,7 +86,15 @@ test('a lock is controllable only with the option on', () => {
   assert.equal(commandOf(pro, 'deadbolt', 1, { config: normalizeConfig() }), null);
   assert.deepEqual(commandOf(pro, 'lock', 1).commands, [{ command: 'lock' }]);
   assert.deepEqual(commandOf(pro, 'lock', 0).commands, [{ command: 'unlock' }]);
-  assert.throws(() => commandOf(pro, 'deadbolt', 1), /already reads unlocked/);
+  // Already unlocked: `deadbolt` would toggle the lock, nothing is sent and
+  // the command succeeds (the lock is where it was asked to be).
+  assert.deepEqual(commandOf(pro, 'deadbolt', 1), { commands: [], expected: { lock: 0 } });
+  // `unlock` keeps opening nothing more than the lock on a Pro.
+  assert.equal(commandOf(pro, 'lock', 0).retryDeviceError, true);
+  // No "open the door" button on a Pro, even with both options.
+  const both = { config: normalizeConfig({ lock_control: true, lock_open: true }) };
+  assert.ok(!kind.features(raw(pro), both).some((f) => f.key === 'open-door'));
+  assert.equal(commandOf(pro, 'open-door', 1, both), null);
   const locked = { status: { ...STATUSES[pro], lockState: 'lock' } };
   assert.deepEqual(commandOf(pro, 'deadbolt', 1, locked), {
     commands: [{ command: 'deadbolt' }],
@@ -188,13 +196,99 @@ test('a Lock Ultra Max: every documented lock state, any case, and its door', ()
     retryDeviceError: true,
     verify: true,
   });
+  // `unlock` opens the door of an Ultra Max (forum, 26/11/2026): unlocking
+  // retracts the deadbolt only, never sent again on a 190 (it toggles).
   assert.deepEqual(command('lock', 0), {
-    commands: [{ command: 'unlock' }],
+    commands: [{ command: 'deadbolt' }],
     expected: { lock: 0 },
-    retryDeviceError: true,
     verify: true,
   });
   assert.deepEqual(command('deadbolt', 1).commands, [{ command: 'deadbolt' }]);
+  // Already unlocked (deadbolt retracted, latch holding): nothing is sent,
+  // whatever the door sensor says (the app itself shows it wrong).
+  for (const doorState of ['opened', 'closed']) {
+    const unlocked = ultraStatus('latchBoltLocked', doorState);
+    const run = (key, value) =>
+      kind.command({
+        key,
+        value,
+        device: ULTRA_MAX,
+        status: unlocked,
+        config: normalizeConfig({ lock_control: true }),
+      });
+    assert.deepEqual(run('lock', 0).commands, []);
+    assert.deepEqual(run('deadbolt', 1).commands, []);
+    // Locking does not look at the door either.
+    assert.deepEqual(run('lock', 1).commands, [{ command: 'lock' }]);
+  }
+  // Moving, jammed, half locked or unknown: `deadbolt` (a toggle) is never
+  // sent blind.
+  for (const lockState of ['unlocking', 'locking', 'jammed', 'halfLocked', undefined]) {
+    for (const [key, value] of [
+      ['lock', 0],
+      ['deadbolt', 1],
+    ]) {
+      assert.throws(
+        () =>
+          kind.command({
+            key,
+            value,
+            device: ULTRA_MAX,
+            status: lockState ? ultraStatus(lockState, 'close') : undefined,
+            config: normalizeConfig({ lock_control: true }),
+          }),
+        /nothing sent/,
+        `${key} from ${lockState}`,
+      );
+    }
+  }
+  // The Lock Ultra too (OpenWonderLabs/SwitchBotAPI#416).
+  assert.deepEqual(
+    kindOf('Smart Lock Ultra').command({
+      key: 'lock',
+      value: 0,
+      device: { ...ULTRA_MAX, deviceType: 'Smart Lock Ultra' },
+      status: ultraStatus('locked', 'close'),
+      config: normalizeConfig({ lock_control: true }),
+    }).commands,
+    [{ command: 'deadbolt' }],
+  );
+  assert.equal(kind.needsFreshStatus({ key: 'lock', value: 0, device: ULTRA_MAX }), true);
+  assert.equal(kind.needsFreshStatus({ key: 'lock', value: 1, device: ULTRA_MAX }), false);
+});
+
+test('opening the door of a Lock Ultra needs its own option, off by default', () => {
+  const kind = kindOf('Smart Lock Ultra Max');
+  const keysWith = (config) =>
+    kind.features(ULTRA_MAX, { config: normalizeConfig(config) }).map((f) => f.key);
+  assert.equal(normalizeConfig().lock_open, false);
+  assert.ok(!keysWith({ lock_control: true }).includes('open-door'));
+  // Without lock control, the second option alone gives nothing.
+  assert.deepEqual(keysWith({ lock_open: true }), ['lock-state', 'battery', 'door']);
+  assert.deepEqual(keysWith({ lock_control: true, lock_open: true }), [
+    'lock',
+    'deadbolt',
+    'open-door',
+    'lock-state',
+    'battery',
+    'door',
+  ]);
+  const run = (config) =>
+    kind.command({
+      key: 'open-door',
+      value: 1,
+      device: ULTRA_MAX,
+      status: ultraStatus('locked', 'close'),
+      config: normalizeConfig(config),
+    });
+  assert.equal(run({ lock_control: true }), null);
+  assert.equal(run({ lock_open: true }), null);
+  // Never sent again on a 190: a second `unlock` would pull the latch twice.
+  assert.deepEqual(run({ lock_control: true, lock_open: true }), {
+    commands: [{ command: 'unlock' }],
+    expected: { lock: 0 },
+    verify: true,
+  });
 });
 
 test('no deadbolt button on the Lite (left out by Home Assistant) nor the Vision models', () => {

@@ -19,7 +19,8 @@ SwitchBot app.
     voltage, current, energy of the day);
   - Curtain, Curtain 3, Roller Shade, Blind Tilt (position, open, close, stop);
   - Lock, Lock Pro, Lock Ultra, Lock Vision... (lock state, door, battery; locking and unlocking
-    only when the user allows it);
+    only when the user allows it; on a Lock Ultra, unlocking no longer sends the command that opens the door, a separate
+    "Open the door" button needs a second option);
   - Meter, Meter Plus, Outdoor Meter, Meter Pro, Meter Pro CO2, Hub 2, Hub 3 (temperature,
     humidity, CO2, light level, battery);
   - Contact, Motion and Water Leak sensors;
